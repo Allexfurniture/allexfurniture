@@ -94,7 +94,7 @@ export default async function Home() {
       <div className="hero-copy">
         <p className="eyebrow"><span className="eyebrow-line" /> COMMERCIAL & CUSTOM FURNITURE</p>
         <h1>Furniture for<br />spaces that <em>work.</em></h1>
-        <p className="hero-description">ALLEX Furniture provides office and commercial furniture solutions, including custom-made options for spaces with specific needs.</p>
+        <p className="hero-description">ALLEX Furniture provides office and commercial furniture solutions, including imported furniture and custom-made options for spaces with specific needs.</p>
         <div className="hero-actions"><Link className="button button-dark" href="/furniture">Explore furniture <span>↗</span></Link><Link className="text-link" href="/contact">Discuss an enquiry <span>↗</span></Link></div>
         <div className="hero-note"><span className="note-dot" /> {COMPANY.tagline}</div>
       </div>

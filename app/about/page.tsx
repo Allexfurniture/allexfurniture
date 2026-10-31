@@ -18,7 +18,7 @@ export default function AboutPage() {
       <div className="page-heading">
         <p className="eyebrow">ABOUT ALLEX FURNITURE</p>
         <h1>Furniture solutions for <em>working spaces.</em></h1>
-        <p>ALLEX Furniture focuses on office furniture and custom-made furniture solutions for business and commercial environments.</p>
+        <p>ALLEX Furniture focuses on office furniture, imported furniture, and custom-made furniture solutions for business and commercial environments.</p>
       </div>
       <div className="corporate-grid">
         <article className="corporate-panel"><p className="eyebrow">WHAT WE DO</p><h2>Furniture shaped around the space.</h2><p>Explore the active catalog for current product names and model numbers. For a specific requirement, contact our team to discuss your enquiry and the information available for the product.</p><Link className="text-link" href="/furniture">Browse the furniture catalog ↗</Link></article>
