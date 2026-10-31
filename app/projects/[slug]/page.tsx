@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { QueryData } from "@supabase/supabase-js";
@@ -48,17 +49,14 @@ export default async function ProjectDetailPage({ params }: Props) {
   if (!project) notFound();
 
   const images = [...(project.project_images ?? [])].sort((a, b) => Number(b.is_primary) - Number(a.is_primary));
-  const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
 
   return <main>
     <SiteHeader />
     <section className="page-shell project-detail-page">
-      <Link href="/projects" className="text-link">← All projects</Link>
+      <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><Link href="/projects">Projects</Link><span aria-hidden="true">/</span><span aria-current="page">{project.name}</span></nav>
       <div className="project-detail-heading"><p className="eyebrow">ALLEX IN THE WORLD</p><h1>{project.name}</h1>{project.description && <p>{project.description}</p>}</div>
-      {images.length ? <div className="project-detail-gallery">{images.map((image) => {
-        const imageUrl = storageUrl ? `${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}` : "";
-        return <div key={image.id} role="img" aria-label={image.alt_text ?? project.name} style={{ backgroundImage: `url("${imageUrl}")` }} />;
-      })}</div> : <div className="empty-catalog"><p>No project images have been published yet.</p></div>}
+      {images.length && storageUrl ? <div className="project-detail-gallery">{images.map((image) => <div className="project-detail-image" key={image.id}><Image src={`${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}`} alt={image.alt_text?.trim() || project.name} fill sizes="(max-width: 700px) 90vw, 70vw" /></div>)}</div> : <div className="empty-catalog"><p>No project images have been published yet.</p></div>}
       <ButtonLink href="/contact">Ask us about a similar project <span>↗</span></ButtonLink>
     </section>
     <SiteFooter />

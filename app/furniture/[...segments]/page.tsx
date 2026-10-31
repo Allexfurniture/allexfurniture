@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { QueryData } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { getCategoryPath, getDescendantCategoryIds, isSafeModelSegment, productPath, type CategoryPathNode } from "@/lib/public-site";
+import { SITE_URL, getCategoryPath, getDescendantCategoryIds, isSafeModelSegment, productPath } from "@/lib/public-site";
 
 type Props = {
   params: Promise<{ segments: string[] }>;
@@ -51,7 +51,8 @@ function safePage(value: string | string[] | undefined): number {
 
 function findCategory(segments: string[], categories: Category[]) {
   const requested = segments.join("/");
-  return categories.find((category) => getCategoryPath(category.id, categories).join("/") === requested) ?? null;
+  const matches = categories.filter((category) => getCategoryPath(category.id, categories).join("/") === requested);
+  return matches.length === 1 ? matches[0] : null;
 }
 
 function productMatchesPath(product: Product, categorySegments: string[], categories: Category[]): boolean {
@@ -126,11 +127,13 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
   }
 
   const lastSegment = segments[segments.length - 1] ?? "";
+  let productCandidates: Product[] = [];
   if (segments.length >= 2 && isSafeModelSegment(lastSegment)) {
     try {
       const { data, error } = await productsByModelQuery(supabase!, lastSegment);
       if (error) throw error;
-      const matches = (data ?? []).filter((product) => productMatchesPath(product, segments.slice(0, -1), categories!));
+      productCandidates = data ?? [];
+      const matches = productCandidates.filter((product) => productMatchesPath(product, segments.slice(0, -1), categories!));
       if (matches.length === 1) {
         const product = matches[0];
         const categoryPath = getCategoryPath(product.categories!.id, categories!);
@@ -158,7 +161,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
           description: product.description || undefined,
           image: images.map((image) => storageUrl ? `${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}` : undefined).filter(Boolean),
           brand: { "@type": "Brand", name: "ALLEX Furniture" },
-          url: new URL(canonical, process.env.NEXT_PUBLIC_SITE_URL || "https://www.allexfurniturebd.com").toString(),
+          url: new URL(canonical, SITE_URL).toString(),
         };
 
         return <main>
@@ -171,7 +174,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
             </nav>
             <div className="product-detail">
               <div className="detail-gallery">
-                {images.length && storageUrl ? images.map((image, index) => <div key={image.id} className="detail-image-frame"><Image className="detail-image-photo" src={`${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}`} alt={image.alt_text?.trim() || `${product.name} furniture by ALLEX Furniture`} width={1400} height={1100} sizes="(max-width: 750px) 90vw, 52vw" priority={index === 0} unoptimized /></div>) : <div className="detail-placeholder"><span>ALLEX FURNITURE</span><b>{product.name.slice(0, 1)}</b><small>Product image not available</small></div>}
+                {images.length && storageUrl ? images.map((image, index) => <div key={image.id} className="detail-image-frame"><Image className="detail-image-photo" src={`${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}`} alt={image.alt_text?.trim() || `${product.name} furniture by ALLEX Furniture`} width={1400} height={1100} sizes="(max-width: 750px) 90vw, 52vw" priority={index === 0} /></div>) : <div className="detail-placeholder"><span>ALLEX FURNITURE</span><b>{product.name.slice(0, 1)}</b><small>Product image not available</small></div>}
               </div>
               <div className="detail-copy">
                 <p className="eyebrow">{product.categories?.name ?? "Furniture"}</p>
@@ -191,6 +194,17 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
       }
     } catch {
       // If product lookup fails, continue to category matching and then return 404.
+    }
+  }
+
+  if (segments.length === 2) {
+    const legacyMatches = productCandidates.filter((product) => product.categories?.slug === segments[0] && product.categories?.status === "active");
+    if (legacyMatches.length === 1) {
+      const legacyProduct = legacyMatches[0];
+      const legacyPath = getCategoryPath(legacyProduct.categories!.id, categories!);
+      if (legacyPath.length > 0 && legacyPath.join("/") !== segments[0]) {
+        permanentRedirect(productPath(legacyPath, legacyProduct.model));
+      }
     }
   }
 
@@ -245,7 +259,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
           const image = child.category_images;
           const imageUrl = image && imageBase ? `${imageBase}/storage/v1/object/public/furniture-images/${image.storage_path}` : null;
           return <Link className="category-card" href={`/furniture/${getCategoryPath(child.id, categories!).map(encodeURIComponent).join("/")}`} key={child.id}>
-            <div className="category-card-image">{imageUrl ? <Image src={imageUrl} alt={image?.alt_text?.trim() || child.name} fill sizes="(max-width: 650px) 90vw, 30vw" unoptimized /> : <div className="category-placeholder" aria-hidden="true"><span>ALLEX</span><b>{child.name.slice(0, 1)}</b></div>}</div>
+            <div className="category-card-image">{imageUrl ? <Image src={imageUrl} alt={image?.alt_text?.trim() || child.name} fill sizes="(max-width: 650px) 90vw, 30vw" /> : <div className="category-placeholder" aria-hidden="true"><span>ALLEX</span><b>{child.name.slice(0, 1)}</b></div>}</div>
             <div className="category-card-copy"><h3>{child.name}</h3><span aria-hidden="true">↗</span></div>
           </Link>;
         })}</div>

@@ -38,7 +38,6 @@ export function ProductCard({ product, categoryPath, categories }: ProductCardPr
               alt={primary?.alt_text?.trim() || `${product.name} furniture by ALLEX Furniture`}
               fill
               sizes="(max-width: 650px) 46vw, (max-width: 950px) 46vw, 23vw"
-              unoptimized
             />
           ) : (
             <div className="product-placeholder" role="img" aria-label={`No product image available for ${product.name}`}>
