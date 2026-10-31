@@ -28,7 +28,7 @@ This checklist applies only to the public website. It does not authorize admin w
 - [ ] No prices, stock counts, ratings, warranties, or specifications are invented.
 
 ## Search and pagination
-- [ ] Search matches product name, model, and category name.
+- [ ] Search matches product name, model, description, and category name.
 - [ ] Category filtering includes descendant categories.
 - [ ] Search and category filters combine correctly.
 - [ ] Pagination retains active filters.
@@ -48,6 +48,7 @@ This checklist applies only to the public website. It does not authorize admin w
 - [ ] Sitemap includes only canonical active category/product/project URLs.
 - [ ] Sitemap excludes admin, query-filter variants, inactive records, and duplicate product URLs.
 - [ ] Robots rules do not claim to secure private data.
+- [ ] WebSite, Organization, Product, and BreadcrumbList structured data are valid and match visible content.
 - [ ] Product structured data contains no invented offers or pricing.
 - [ ] Redirects are checked if any old URL patterns are retired.
 
