@@ -261,7 +261,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
     }
     products = result.data ?? [];
   } catch {
-    notFound();
+    throw new Error("Furniture catalog is temporarily unavailable.");
   }
 
   const children = categories!.filter((item) => item.parent_id === category.id && uniqueCategoryIds.has(item.id));

@@ -55,8 +55,7 @@ export function getCategoryPath(categoryId: string, categories: readonly Categor
   let current = byId.get(categoryId);
 
   while (current) {
-    // The current database documents a maximum of three category levels.
-    if (visited.has(current.id) || segments.length >= 3) return [];
+    if (visited.has(current.id)) return [];
     if (current.status && current.status !== "active") return [];
     if (!current.slug.trim()) return [];
 
