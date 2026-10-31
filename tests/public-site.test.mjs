@@ -23,7 +23,7 @@ test("builds full category paths from active ancestors", () => {
   assert.deepEqual(getCategoryPath("bed", categories), ["home-furniture", "living-area", "king-size-bed"]);
 });
 
-test("rejects broken, inactive, cyclic, and over-deep category paths", () => {
+test("rejects broken, inactive, and cyclic category paths while supporting future depth", () => {
   assert.deepEqual(getCategoryPath("missing-parent", [
     { id: "orphan", slug: "orphan", parent_id: "missing-parent", status: "active" },
   ]), []);
@@ -40,7 +40,7 @@ test("rejects broken, inactive, cyclic, and over-deep category paths", () => {
     { id: "two", slug: "two", parent_id: "one", status: "active" },
     { id: "three", slug: "three", parent_id: "two", status: "active" },
     { id: "four", slug: "four", parent_id: "three", status: "active" },
-  ]), []);
+  ]), ["one", "two", "three", "four"]);
 });
 
 test("detects unique category routes and excludes ambiguous ancestor paths", () => {
