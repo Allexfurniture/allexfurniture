@@ -11,7 +11,7 @@ export async function submitContact(formData: FormData) {
   const message = String(formData.get("message") ?? "").trim();
   const website = String(formData.get("website") ?? "").trim();
 
-  if (website) redirect("/contact?sent=1");
+  if (website) redirect("/contact");
 
   if (name.length < 1 || name.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320 || subject.length < 1 || subject.length > 300 || message.length < 1 || message.length > 10000 || phone.length > 50) {
     redirect("/contact?error=Please%20check%20your%20details%20and%20try%20again");
