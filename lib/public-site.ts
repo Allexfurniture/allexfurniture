@@ -24,13 +24,13 @@ export const GROUP_CONCERNS = [
   },
   {
     name: "AD Steel & Construction",
-    description: "A group concern. Service details and an official public website have not been independently confirmed for this page.",
+    description: "Part of the ALLEX group of concerns. Contact the group office for further information.",
     website: null,
     current: false,
   },
   {
     name: "The Allex Design",
-    description: "A group concern. Service details and an official public website have not been independently confirmed for this page.",
+    description: "Part of the ALLEX group of concerns. Contact the group office for further information.",
     website: null,
     current: false,
   },

@@ -28,7 +28,7 @@ export default function GroupPage() {
           {concern.website ? <a className="text-link" href={concern.website} target="_blank" rel="noreferrer">{concern.current ? "Visit ALLEX Furniture" : "Visit official website"} ↗</a> : <span className="group-note">Contact ALLEX Furniture for group enquiries.</span>}
         </article>)}
       </div>
-      <p className="corporate-disclaimer">The listed concerns are separate businesses. Service descriptions and external links are included only where public information could be identified; unverified details are not inferred.</p>
+      <p className="corporate-disclaimer">Each concern has its own identity and services. Visit the linked official website where available, or contact ALLEX Furniture for group enquiries.</p>
       <div className="corporate-cta"><div><p className="eyebrow">NEED FURNITURE INFORMATION?</p><h2>We’re ready to hear about your enquiry.</h2></div><Link className="button button-dark" href="/contact">Contact us ↗</Link></div>
     </section>
     <SiteFooter />

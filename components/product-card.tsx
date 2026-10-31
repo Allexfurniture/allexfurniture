@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Tables } from "@/lib/database.types";
-import { getCategoryPath, productPath, type CategoryPathNode } from "@/lib/public-site";
+import { getCategoryPath, isSafeModelSegment, productPath, type CategoryPathNode } from "@/lib/public-site";
 
 type CatalogProduct = Pick<Tables<"products">, "id" | "name" | "model"> & {
   categories: (Pick<Tables<"categories">, "id" | "name" | "slug" | "parent_id"> & { status?: string }) | null;
@@ -25,7 +25,9 @@ export function ProductCard({ product, categoryPath, categories }: ProductCardPr
     : product.categories && categories
       ? getCategoryPath(product.categories.id, categories)
       : product.categories?.slug ? [product.categories.slug] : [];
-  const href = productPath(path, product.model);
+  const href = path.length > 0 && isSafeModelSegment(product.model)
+    ? productPath(path, product.model)
+    : `/contact?subject=${encodeURIComponent(`Enquiry about ${product.name} (${product.model})`)}`;
 
   return (
     <article className="product-card">

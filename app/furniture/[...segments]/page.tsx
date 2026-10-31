@@ -43,6 +43,18 @@ type Category = QueryData<ReturnType<typeof categoriesQuery>>[number];
 type Product = QueryData<ReturnType<typeof productsByModelQuery>>[number];
 type CategoryProduct = QueryData<ReturnType<typeof categoryProductsQuery>>[number];
 
+function relatedProductsQuery(supabase: Awaited<ReturnType<typeof createClient>>, categoryId: string, productId: string) {
+  return supabase.from("products")
+    .select("id,name,model,categories(id,name,slug,parent_id,status),product_images(storage_path,alt_text,is_primary)")
+    .eq("status", "active")
+    .eq("category_id", categoryId)
+    .neq("id", productId)
+    .order("name")
+    .limit(4);
+}
+
+type RelatedProduct = QueryData<ReturnType<typeof relatedProductsQuery>>[number];
+
 function safePage(value: string | string[] | undefined): number {
   const first = Array.isArray(value) ? value[0] : value;
   const parsed = Number.parseInt(first ?? "1", 10);
@@ -128,41 +140,44 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
 
   const lastSegment = segments[segments.length - 1] ?? "";
   let productCandidates: Product[] = [];
+  let product: Product | null = null;
+  let related: RelatedProduct[] = [];
+
   if (segments.length >= 2 && isSafeModelSegment(lastSegment)) {
     try {
-      const { data, error } = await productsByModelQuery(supabase!, lastSegment);
-      if (error) throw error;
-      productCandidates = data ?? [];
-      const matches = productCandidates.filter((product) => productMatchesPath(product, segments.slice(0, -1), categories!));
+      const result = await productsByModelQuery(supabase!, lastSegment);
+      if (result.error) throw result.error;
+      productCandidates = result.data ?? [];
+      const matches = productCandidates.filter((candidate) => productMatchesPath(candidate, segments.slice(0, -1), categories!));
       if (matches.length === 1) {
-        const product = matches[0];
-        const categoryPath = getCategoryPath(product.categories!.id, categories!);
-        const images = [...(product.product_images ?? [])].sort((a, b) => Number(b.is_primary) - Number(a.is_primary));
-        const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
-        const relatedResult = await supabase!
-          .from("products")
-          .select("id,name,model,categories(id,name,slug,parent_id,status),product_images(storage_path,alt_text,is_primary)")
-          .eq("status", "active")
-          .eq("category_id", product.category_id)
-          .neq("id", product.id)
-          .order("name")
-          .limit(4);
-        const related = (relatedResult.data ?? []).filter((item) => item.categories?.status === "active");
-        const breadcrumbCategories = categoryPath.map((_, index) => {
-          const prefix = categoryPath.slice(0, index + 1).join("/");
-          return categories!.find((item) => getCategoryPath(item.id, categories!).join("/") === prefix);
-        }).filter((item): item is Category => Boolean(item));
-        const canonical = productPath(categoryPath, product.model);
-        const schema = {
-          "@context": "https://schema.org",
-          "@type": "Product",
-          name: product.name,
-          model: product.model,
-          description: product.description || undefined,
-          image: images.map((image) => storageUrl ? `${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}` : undefined).filter(Boolean),
-          brand: { "@type": "Brand", name: "ALLEX Furniture" },
-          url: new URL(canonical, SITE_URL).toString(),
-        };
+        product = matches[0];
+        const relatedResult = await relatedProductsQuery(supabase!, product.category_id, product.id);
+        if (!relatedResult.error) related = (relatedResult.data ?? []).filter((item) => item.categories?.status === "active");
+      }
+    } catch {
+      // Continue to legacy redirect, category lookup, and the branded 404 when needed.
+    }
+  }
+
+  if (product) {
+    const categoryPath = getCategoryPath(product.categories!.id, categories!);
+    const images = [...(product.product_images ?? [])].sort((a, b) => Number(b.is_primary) - Number(a.is_primary));
+    const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
+    const breadcrumbCategories = categoryPath.map((_, index) => {
+      const prefix = categoryPath.slice(0, index + 1).join("/");
+      return categories!.find((item) => getCategoryPath(item.id, categories!).join("/") === prefix);
+    }).filter((item): item is Category => Boolean(item));
+    const canonical = productPath(categoryPath, product.model);
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: product.name,
+      model: product.model,
+      description: product.description || undefined,
+      image: images.map((image) => storageUrl ? `${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}` : undefined).filter(Boolean),
+      brand: { "@type": "Brand", name: "ALLEX Furniture" },
+      url: new URL(canonical, SITE_URL).toString(),
+    };
 
         return <main>
           <SiteHeader actionHref={`/contact?subject=${encodeURIComponent(`Enquiry about ${product.name} (${product.model})`)}`} actionLabel="Enquire about this product" />
@@ -191,14 +206,10 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
           </section>
           <SiteFooter />
         </main>;
-      }
-    } catch {
-      // If product lookup fails, continue to category matching and then return 404.
-    }
   }
 
   if (segments.length === 2) {
-    const legacyMatches = productCandidates.filter((product) => product.categories?.slug === segments[0] && product.categories?.status === "active");
+    const legacyMatches = productCandidates.filter((candidate) => candidate.categories?.slug === segments[0] && candidate.categories?.status === "active");
     if (legacyMatches.length === 1) {
       const legacyProduct = legacyMatches[0];
       const legacyPath = getCategoryPath(legacyProduct.categories!.id, categories!);
@@ -208,7 +219,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
     }
   }
 
-  const category = findCategory(segments, categories!);
+    const category = findCategory(segments, categories!);
   if (!category) notFound();
 
   const categoryPath = getCategoryPath(category.id, categories!);

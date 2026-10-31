@@ -87,7 +87,7 @@ export default async function Home() {
         <div className="hero-note"><span className="note-dot" /> {COMPANY.tagline}</div>
       </div>
       <div className="hero-visual">
-        <div className="hero-photo" role="img" aria-label="Furniture and interior design visual" />
+        <div className="hero-photo" aria-hidden="true" />
         <div className="photo-label"><span>ALLEX FURNITURE</span><span>OFFICE & COMMERCIAL</span></div>
         <div className="hero-stamp"><span>THOUGHTFUL</span><b>FURNITURE<br />SOLUTIONS.</b><span>ALLEX FURNITURE</span></div>
       </div>
@@ -115,7 +115,7 @@ export default async function Home() {
       {productGroups.length > 0 ? <div className="catalog-groups">{productGroups.map((group) => <section id={`category-${group.slug}`} className="catalog-group" key={group.id}><div className="section-heading"><div><h3>{group.name}</h3></div><Link className="text-link" href={`/furniture?category=${encodeURIComponent(group.slug)}`}>Filter by category ↗</Link></div><div className="product-grid">{group.items.map((product) => <ProductCard key={product.id} product={product} categories={validCategories} categoryPath={product.categories ? getCategoryPath(product.categories.id, validCategories) : []} />)}</div></section>)}</div> : <div className="empty-catalog"><span className="empty-icon" aria-hidden="true">✳</span><h3>{connected ? "No active products are published yet." : "The catalog is temporarily unavailable."}</h3><p>Contact our team if you need information about a furniture requirement.</p><Link className="text-link" href="/contact">Ask about furniture ↗</Link></div>}
     </section>
 
-    <section id="story" className="story-section"><div className="story-image" role="img" aria-label="Furniture and workspace visual" /><div className="story-copy"><p className="eyebrow">ABOUT ALLEX FURNITURE</p><h2>Furniture shaped around <em>your space.</em></h2><p>From the published catalog to custom furniture enquiries, ALLEX Furniture helps businesses explore furniture options for the spaces they need to create.</p><ButtonLink variant="light" href="/about">Learn about ALLEX Furniture <span>↗</span></ButtonLink><Link className="story-signoff" href="/group">Explore our group concerns ↗</Link></div></section>
+    <section id="story" className="story-section"><div className="story-image" aria-hidden="true" /><div className="story-copy"><p className="eyebrow">ABOUT ALLEX FURNITURE</p><h2>Furniture shaped around <em>your space.</em></h2><p>From the published catalog to custom furniture enquiries, ALLEX Furniture helps businesses explore furniture options for the spaces they need to create.</p><ButtonLink variant="light" href="/about">Learn about ALLEX Furniture <span>↗</span></ButtonLink><Link className="story-signoff" href="/group">Explore our group concerns ↗</Link></div></section>
 
     <section className="contact-banner"><div><p className="eyebrow">HAVE A REQUIREMENT?</p><h2>Let’s discuss your<br /><em>furniture enquiry.</em></h2></div><ButtonLink href="/contact">Contact our team <span>↗</span></ButtonLink></section>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema).replace(/</g, "\\u003c") }} />
