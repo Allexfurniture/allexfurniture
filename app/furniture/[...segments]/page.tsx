@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { QueryData } from "@supabase/supabase-js";
@@ -66,13 +67,13 @@ export default async function ProductPage({ params }: Props) {
 
   if (!product) notFound();
   const images = [...(product.product_images ?? [])].sort((a, b) => Number(b.is_primary) - Number(a.is_primary));
-  const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\\/$/, "");
   return <main>
     <SiteHeader actionHref={`/contact?subject=${encodeURIComponent(`Enquiry about ${product.name} (${product.model})`)}`} actionLabel="Ask about this piece" />
     <section className="page-shell">
       <Link href="/#catalog" className="text-link">← Back to the collection</Link>
       <div className="product-detail">
-        <div className="detail-gallery">{images.length ? images.map((image) => <div key={image.id} className="detail-image" role="img" aria-label={image.alt_text || product.name} style={{ backgroundImage: `url("${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}")` }} />) : <div className="detail-placeholder"><span>ALLEX FURNITURE</span><b>{product.name.slice(0, 1)}</b></div>}</div>
+        <div className="detail-gallery">{images.length && storageUrl ? images.map((image, index) => <div key={image.id} className="detail-image-frame"><Image className="detail-image-photo" src={`${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}`} alt={image.alt_text?.trim() || `${product.name} furniture by Allex Furniture`} width={1400} height={1100} sizes="(max-width: 750px) 90vw, 52vw" priority={index === 0} unoptimized /></div>) : <div className="detail-placeholder"><span>ALLEX FURNITURE</span><b>{product.name.slice(0, 1)}</b></div>}</div>
         <div className="detail-copy"><p className="eyebrow">{product.categories?.name ?? "THE COLLECTION"}</p><h1>{product.name}</h1><p className="model-label">MODEL {product.model}</p><div className="detail-rule" /><p className="detail-description">{product.description || "A considered piece from the Allex Furniture collection. Get in touch with our team to learn more about materials, dimensions and availability."}</p><ButtonLink href={`/contact?subject=${encodeURIComponent("Enquiry about " + product.name + " (" + product.model + ")")}`}>Enquire about this piece <span>↗</span></ButtonLink><p className="form-note">Catalog only. No online checkout or payment.</p></div>
       </div>
     </section>
