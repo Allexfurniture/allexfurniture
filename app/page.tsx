@@ -1,10 +1,34 @@
+import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { QueryData } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { COMPANY, SITE_URL, getCategoryPath, getUniqueCategoryIds } from "@/lib/public-site";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Explore the ALLEX Furniture catalog and enquire about office, commercial, and custom-made furniture solutions.",
+  alternates: { canonical: "/" },
+};
+
+function loadProducts(supabase: Awaited<ReturnType<typeof createClient>>) {
+  return supabase.from("products")
+    .select("id,name,model,categories(id,name,slug,parent_id,status),product_images(storage_path,alt_text,is_primary)")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(8);
+}
+
+function loadCategories(supabase: Awaited<ReturnType<typeof createClient>>) {
+  return supabase.from("categories")
+    .select("id,name,slug,parent_id,status,category_images(storage_path,alt_text)")
+    .eq("status", "active")
+    .order("name");
+}
 
 type Product = QueryData<ReturnType<typeof loadProducts>>[number];
 type Category = QueryData<ReturnType<typeof loadCategories>>[number];
@@ -19,68 +43,115 @@ export default async function Home() {
     products = productData ?? [];
     categories = categoryData ?? [];
     connected = !productError && !categoryError;
-  } catch { /* The storefront remains useful while environment variables are being configured. */ }
+  } catch {
+    // Keep the public landing page useful while environment variables are being configured.
+  }
 
-  const productGroups = products.reduce<{ slug: string; name: string; items: typeof products }[]>((groups, product) => {
-    const slug = product.categories?.slug ?? "furniture";
-    const name = product.categories?.name ?? "Furniture";
-    let group = groups.find((item) => item.slug === slug);
+  const uniqueCategoryIds = getUniqueCategoryIds(categories);
+  const validCategories = categories.filter((category) => uniqueCategoryIds.has(category.id));
+  const rootCategories = validCategories.filter((category) => !category.parent_id);
+  const productGroups = products.reduce<{ id: string; slug: string; name: string; items: Product[] }[]>((groups, product) => {
+    const category = product.categories;
+    if (!category || category.status !== "active" || !validCategories.some((item) => item.id === category.id)) return groups;
+    let group = groups.find((item) => item.id === category.id);
     if (!group) {
-      group = { slug, name, items: [] };
+      group = { id: category.id, slug: category.slug, name: category.name, items: [] };
       groups.push(group);
     }
     group.items.push(product);
     return groups;
   }, []);
 
-  return (
-    <main>
-      <SiteHeader showNavigation />
-
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow"><span className="eyebrow-line" /> MADE FOR LIVING</p>
-          <h1>Spaces that<br />feel like <em>you.</em></h1>
-          <p className="hero-description">Furniture with a point of view. Discover considered pieces, honest materials and timeless forms made to feel at home.</p>
-          <div className="hero-actions"><a className="button button-dark" href="#catalog">Explore the collection <span>↗</span></a><a className="text-link" href="#story">Get to know us <span>↓</span></a></div>
-          <div className="hero-note"><span className="note-dot" /> A little more considered. A lot more you.</div>
-        </div>
-        <div className="hero-visual">
-          <div className="hero-photo" role="img" aria-label="Warm contemporary living room with sculptural furniture" />
-          <div className="photo-label"><span>01 / 03</span><span>THE ART OF EVERYDAY</span></div>
-          <div className="hero-stamp"><span>GOOD DESIGN</span><b>GOOD<br/>LIVING.</b><span>ALLEX FURNITURE</span></div>
-        </div>
-      </section>
-
-      <section className="trust-strip"><span>TIMELESS BY DESIGN</span><i /> <span>MADE FOR REAL LIFE</span><i /> <span>DETAILS THAT MATTER</span><i /> <span>ROOM TO BE YOURSELF</span></section>
-
-      <section id="collections" className="section collections-section">
-        <div className="section-heading"><div><p className="eyebrow">FIND YOUR FEEL</p><h2>Rooms with <em>character.</em></h2></div><Link className="text-link" href="/furniture">View all furniture <span>↗</span></Link></div>
-        {categories.length ? <div className="collection-grid">{categories.map((category, index) => {
-          const image = category.category_images;
-          const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-          return <Link className={`collection-card collection-${(index % 3) + 1}`} href={`/furniture?category=${encodeURIComponent(category.slug)}`} key={category.id}><div className="collection-image" style={image && storageUrl ? { backgroundImage: `url("${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}")` } : undefined} role={image ? "img" : undefined} aria-label={image?.alt_text ?? undefined} /><div className="collection-overlay" /><div className="collection-copy"><span>{String(index + 1).padStart(2, "0")} / COLLECTION</span><h3>{category.name}</h3><p>Explore the collection</p></div><span className="round-arrow">↗</span></Link>;
-        })}</div> : <div className="empty-catalog"><h3>{connected ? "New collections are on the way." : "Collections will appear here when the catalog is connected."}</h3></div>}
-      </section>
-
-      <section id="catalog" className="section catalog-section">
-        <div className="section-heading"><div><p className="eyebrow">THE ALLEX EDIT</p><h2>Pieces to <em>live with.</em></h2><p className="section-intro">Explore the latest additions, then browse the full collection.</p></div><Link className="text-link" href="/furniture">Browse all furniture <span>↗</span></Link></div>
-        {productGroups.length > 0 && <div className="category-pills">{productGroups.map((group) => <a key={group.slug} href={`#category-${group.slug}`}>{group.name}</a>)}</div>}
-        {products.length ? <div className="catalog-groups">{productGroups.map((group) => <section id={`category-${group.slug}`} className="catalog-group" key={group.slug}><div className="section-heading"><div><h3>{group.name}</h3></div></div><div className="product-grid">{group.items.map((product) => <ProductCard key={product.id} product={product} />)}</div></section>)}</div> : <div className="empty-catalog"><span className="empty-icon">✳</span><h3>The collection is taking shape.</h3><p>{connected ? "Our team is preparing the first pieces. Check back soon." : "Our furniture collection will appear here as soon as the catalog is connected."}</p><Link className="text-link" href="/contact">Ask us about a piece <span>↗</span></Link></div>}
-      </section>
-
-      <section id="story" className="story-section"><div className="story-image" role="img" aria-label="Natural textures and furniture in a calm interior" /><div className="story-copy"><p className="eyebrow">A MORE PERSONAL SPACE</p><h2>Not just furniture.<br /><em>A feeling.</em></h2><p>We believe the best spaces aren&apos;t styled to impress. They&apos;re made to live in. Allex brings together thoughtful design, warm materials and useful details to help make your space unmistakably yours.</p><ButtonLink variant="light" href="/contact">Tell us what you have in mind <span>↗</span></ButtonLink><span className="story-signoff">Make room for living. — Allex</span></div></section>
-
-      <section className="contact-banner"><div><p className="eyebrow">SOMETHING IN MIND?</p><h2>Let’s make room<br />for <em>what matters.</em></h2></div><ButtonLink href="/contact">Start a conversation <span>↗</span></ButtonLink></section>
-      <SiteFooter />
-    </main>
+  const heroProduct = products.find((product) =>
+    product.categories?.status === "active"
+    && validCategories.some((category) => category.id === product.categories?.id)
+    && Boolean(product.product_images?.length)
   );
-}
+  const heroImage = heroProduct?.product_images?.find((image) => image.is_primary) ?? heroProduct?.product_images?.[0];
+  const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
+  const heroImageUrl = heroImage && storageUrl
+    ? `${storageUrl}/storage/v1/object/public/furniture-images/${heroImage.storage_path}`
+    : null;
 
-async function loadProducts(supabase: Awaited<ReturnType<typeof createClient>>) {
-  return supabase.from("products").select("id,name,model,description,categories(name,slug),product_images(storage_path,alt_text,is_primary)").eq("status", "active").order("created_at", { ascending: false }).limit(8);
-}
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${SITE_URL}#organization`,
+    name: COMPANY.name,
+    url: SITE_URL,
+    email: COMPANY.email,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "NI Tower, Level 7, Plot 01, Road 10, Block E, Banani",
+      addressLocality: "Dhaka",
+      postalCode: "1213",
+      addressCountry: "BD",
+    },
+  };
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${SITE_URL}#website`,
+    url: SITE_URL,
+    name: COMPANY.name,
+    inLanguage: "en",
+    publisher: { "@id": `${SITE_URL}#organization` },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/furniture?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
 
-async function loadCategories(supabase: Awaited<ReturnType<typeof createClient>>) {
-  return supabase.from("categories").select("id,name,slug,category_images(storage_path,alt_text)").eq("status", "active").is("parent_id", null).order("name");
+  return <main>
+    <SiteHeader />
+    <section className="hero">
+      <div className="hero-copy">
+        <p className="eyebrow"><span className="eyebrow-line" /> COMMERCIAL & CUSTOM FURNITURE</p>
+        <h1>Furniture for<br />spaces that <em>work.</em></h1>
+        <p className="hero-description">ALLEX Furniture provides office and commercial furniture solutions, including imported furniture and custom-made options for spaces with specific needs.</p>
+        <div className="hero-actions"><Link className="button button-dark" href="/furniture">Explore furniture <span>↗</span></Link><Link className="text-link" href="/contact">Discuss an enquiry <span>↗</span></Link></div>
+        <div className="hero-note"><span className="note-dot" /> {COMPANY.tagline}</div>
+      </div>
+      <div className="hero-visual">
+        <div className="hero-photo">
+          {heroImageUrl && heroProduct ? <Image className="hero-product-image" src={heroImageUrl} alt={heroImage?.alt_text?.trim() || `${heroProduct.name} furniture by ALLEX Furniture`} fill sizes="(max-width: 900px) 90vw, 45vw" priority /> : null}
+        </div>
+        <div className="photo-label"><span>ALLEX FURNITURE</span><span>OFFICE & COMMERCIAL</span></div>
+        <div className="hero-stamp"><span>THOUGHTFUL</span><b>FURNITURE<br />SOLUTIONS.</b><span>ALLEX FURNITURE</span></div>
+      </div>
+    </section>
+
+    <section className="trust-strip"><span>OFFICE FURNITURE</span><i /> <span>CUSTOM-MADE SOLUTIONS</span><i /> <span>ACTIVE PRODUCT CATALOG</span><i /> <span>DIRECT ENQUIRIES</span></section>
+
+    <section id="collections" className="section collections-section">
+      <div className="section-heading"><div><p className="eyebrow">EXPLORE THE CATALOG</p><h2>Browse by <em>category.</em></h2><p className="section-intro">Choose a category to explore its subcategories and published products.</p></div><Link className="text-link" href="/furniture">View all furniture <span>↗</span></Link></div>
+      {rootCategories.length ? <div className="collection-grid">{rootCategories.map((category, index) => {
+        const image = category.category_images;
+        const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
+        const imageUrl = image && storageUrl ? `${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}` : null;
+        const path = getCategoryPath(category.id, validCategories);
+        const childCount = validCategories.filter((item) => item.parent_id === category.id).length;
+        return <Link className={`collection-card collection-${(index % 3) + 1}`} href={`/furniture/${path.map(encodeURIComponent).join("/")}`} key={category.id}>
+          <div className="collection-image">{imageUrl ? <Image src={imageUrl} alt={image?.alt_text?.trim() || category.name} fill sizes="(max-width: 650px) 90vw, 40vw" /> : null}</div>
+          <div className="collection-overlay" /><div className="collection-copy"><span>{String(index + 1).padStart(2, "0")} / CATEGORY</span><h3>{category.name}</h3><p>{childCount ? `${childCount} subcategories to explore` : "Explore products"}</p></div><span className="round-arrow" aria-hidden="true">↗</span>
+        </Link>;
+      })}</div> : <div className="empty-catalog"><h3>{connected ? "Categories are not published yet." : "The catalog is temporarily unavailable."}</h3><p>Contact our team if you need help with a furniture enquiry.</p><Link className="text-link" href="/contact">Contact ALLEX Furniture ↗</Link></div>}
+    </section>
+
+    <section id="catalog" className="section catalog-section">
+      <div className="section-heading"><div><p className="eyebrow">PUBLISHED PRODUCTS</p><h2>Explore the <em>catalog.</em></h2><p className="section-intro">Product names, model numbers, and images shown here come from the current catalog.</p></div><Link className="text-link" href="/furniture">Browse all furniture <span>↗</span></Link></div>
+      {productGroups.length > 0 ? <div className="catalog-groups">{productGroups.map((group) => <section id={`category-${group.slug}`} className="catalog-group" key={group.id}><div className="section-heading"><div><h3>{group.name}</h3></div><Link className="text-link" href={`/furniture?category=${encodeURIComponent(getCategoryPath(group.id, validCategories).join("/"))}`}>Filter by category ↗</Link></div><div className="product-grid">{group.items.map((product) => <ProductCard key={product.id} product={product} categories={validCategories} categoryPath={product.categories ? getCategoryPath(product.categories.id, validCategories) : []} />)}</div></section>)}</div> : <div className="empty-catalog"><span className="empty-icon" aria-hidden="true">✳</span><h3>{connected ? "No active products are published yet." : "The catalog is temporarily unavailable."}</h3><p>Contact our team if you need information about a furniture requirement.</p><Link className="text-link" href="/contact">Ask about furniture ↗</Link></div>}
+    </section>
+
+    <section id="story" className="story-section"><div className="story-image" aria-hidden="true" /><div className="story-copy"><p className="eyebrow">ABOUT ALLEX FURNITURE</p><h2>Furniture shaped around <em>your space.</em></h2><p>From the published catalog to custom furniture enquiries, ALLEX Furniture helps businesses explore furniture options for the spaces they need to create.</p><ButtonLink variant="light" href="/about">Learn about ALLEX Furniture <span>↗</span></ButtonLink><Link className="story-signoff" href="/group">Explore our group concerns ↗</Link></div></section>
+
+    <section className="contact-banner"><div><p className="eyebrow">HAVE A REQUIREMENT?</p><h2>Let’s discuss your<br /><em>furniture enquiry.</em></h2></div><ButtonLink href="/contact">Contact our team <span>↗</span></ButtonLink></section>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema).replace(/</g, "\\u003c") }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema).replace(/</g, "\\u003c") }} />
+    <SiteFooter />
+  </main>;
 }
