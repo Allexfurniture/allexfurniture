@@ -56,7 +56,7 @@ This checklist applies only to the public website. It does not authorize admin w
 - [ ] `npm run lint`
 - [ ] `npm run typecheck`
 - [ ] `npm run build`
-- [ ] CI HTTP smoke test returns 200 for public static routes and 404 for an unknown category
+- [ ] CI HTTP smoke test returns 200 for public static routes and 404 for an unknown static route; when Supabase is not configured, the database-backed category route shows the catalog-unavailable state rather than a false 404
 - [ ] Responsive checks at 320, 360/390, 768, 1024, 1280, and 1440+ pixels.
 - [ ] Keyboard and screen-reader spot checks.
 - [ ] Lighthouse / Core Web Vitals checks on representative pages.
