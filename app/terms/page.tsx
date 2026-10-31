@@ -3,6 +3,7 @@ import Link from "next/link";
 import { COMPANY } from "@/lib/public-site";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { BreadcrumbSchema } from "@/components/breadcrumb-schema";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions",
@@ -15,6 +16,7 @@ export default function TermsPage() {
     <SiteHeader />
     <section className="page-shell legal-page">
       <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span>Terms & conditions</span></nav>
+      <BreadcrumbSchema items={[{ name: "Home", href: "/" }, { name: "Terms & conditions", href: "/terms" }]} />
       <div className="page-heading"><p className="eyebrow">WEBSITE INFORMATION</p><h1>Terms & <em>conditions.</em></h1><p>These terms describe use of the ALLEX Furniture public catalog and enquiry website.</p></div>
       <div className="legal-content">
         <h2>Catalog information</h2>

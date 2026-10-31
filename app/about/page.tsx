@@ -3,6 +3,7 @@ import Link from "next/link";
 import { COMPANY } from "@/lib/public-site";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { BreadcrumbSchema } from "@/components/breadcrumb-schema";
 
 export const metadata: Metadata = {
   title: "About ALLEX Furniture",
@@ -15,6 +16,7 @@ export default function AboutPage() {
     <SiteHeader />
     <section className="page-shell corporate-page">
       <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span>About</span></nav>
+      <BreadcrumbSchema items={[{ name: "Home", href: "/" }, { name: "About", href: "/about" }]} />
       <div className="page-heading">
         <p className="eyebrow">ABOUT ALLEX FURNITURE</p>
         <h1>Furniture solutions for <em>working spaces.</em></h1>

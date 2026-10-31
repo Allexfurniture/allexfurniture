@@ -5,6 +5,7 @@ import type { QueryData } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { BreadcrumbSchema } from "@/components/breadcrumb-schema";
 
 function projectsQuery(supabase: Awaited<ReturnType<typeof createClient>>) {
   return supabase.from("projects").select("id,name,slug,description,project_images(storage_path,alt_text,is_primary),updated_at").eq("status", "active").order("created_at", { ascending: false });
@@ -41,6 +42,7 @@ export default async function ProjectsPage() {
     <SiteHeader />
     <section className="page-shell project-listing">
       <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">Projects</span></nav>
+      <BreadcrumbSchema items={[{ name: "Home", href: "/" }, { name: "Projects", href: "/projects" }]} />
       <div className="page-heading">
         <p className="eyebrow">PUBLISHED PROJECTS</p>
         <h1>Furniture in <em>real spaces.</em></h1>

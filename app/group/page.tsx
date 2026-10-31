@@ -3,6 +3,7 @@ import Link from "next/link";
 import { GROUP_CONCERNS } from "@/lib/public-site";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { BreadcrumbSchema } from "@/components/breadcrumb-schema";
 
 export const metadata: Metadata = {
   title: "Our Group",
@@ -15,6 +16,7 @@ export default function GroupPage() {
     <SiteHeader />
     <section className="page-shell corporate-page">
       <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span>Our group</span></nav>
+      <BreadcrumbSchema items={[{ name: "Home", href: "/" }, { name: "Our group", href: "/group" }]} />
       <div className="page-heading">
         <p className="eyebrow">CONNECTED CONCERNS</p>
         <h1>Different expertise.<br /><em>Shared group.</em></h1>

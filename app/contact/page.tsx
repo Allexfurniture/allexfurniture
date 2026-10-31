@@ -4,6 +4,7 @@ import { submitContact } from "./actions";
 import { Button } from "@/components/button-link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { BreadcrumbSchema } from "@/components/breadcrumb-schema";
 import { COMPANY } from "@/lib/public-site";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
     <SiteHeader actionHref="/furniture" actionLabel="Browse furniture" actionIcon="↗" />
     <section className="page-shell contact-page">
       <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">Contact</span></nav>
+      <BreadcrumbSchema items={[{ name: "Home", href: "/" }, { name: "Contact", href: "/contact" }]} />
       <div className="page-heading">
         <p className="eyebrow">CONTACT ALLEX FURNITURE</p>
         <h1>Tell us about your <em>enquiry.</em></h1>

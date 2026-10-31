@@ -3,6 +3,7 @@ import Link from "next/link";
 import { COMPANY } from "@/lib/public-site";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { BreadcrumbSchema } from "@/components/breadcrumb-schema";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -15,6 +16,7 @@ export default function PrivacyPolicyPage() {
     <SiteHeader />
     <section className="page-shell legal-page">
       <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span>Privacy policy</span></nav>
+      <BreadcrumbSchema items={[{ name: "Home", href: "/" }, { name: "Privacy policy", href: "/privacy-policy" }]} />
       <div className="page-heading"><p className="eyebrow">WE RESPECT YOUR INFORMATION</p><h1>Privacy <em>policy.</em></h1><p>This page explains how information submitted through the public ALLEX Furniture website is handled.</p></div>
       <div className="legal-content">
         <h2>Information you provide</h2>

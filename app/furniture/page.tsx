@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { BreadcrumbSchema } from "@/components/breadcrumb-schema";
 import { getCategoryPath, getDescendantCategoryIds, getUniqueCategoryIds } from "@/lib/public-site";
 
 export const metadata: Metadata = {
@@ -179,6 +180,7 @@ export default async function FurniturePage({ searchParams }: { searchParams: Pr
     <SiteHeader />
     <section className="page-shell furniture-listing">
       <nav className="breadcrumbs" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><span aria-current="page">Furniture</span></nav>
+      <BreadcrumbSchema items={[{ name: "Home", href: "/" }, { name: "Furniture", href: "/furniture" }]} />
       <div className="page-heading furniture-heading">
         <p className="eyebrow">ALLEX FURNITURE CATALOG</p>
         <h1>Furniture for <em>your space.</em></h1>
