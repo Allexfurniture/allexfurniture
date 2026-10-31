@@ -5,7 +5,7 @@ import { AdminSidebar } from "@/components/admin-sidebar";
 import {
   createCategory, createProduct, createProject, deleteCategory, deleteProduct, deleteProductImage,
   deleteProject, deleteProjectImage, logoutAdmin, setPrimaryProductImage, setPrimaryProjectImage,
-  updateCatalogStatus, updateCategory, updateContactStatus, updateProduct, updateProject,
+  updateCategory, updateContactStatus, updateProduct, updateProject,
   uploadCategoryImage, uploadMoreProductImages, uploadMoreProjectImages,
 } from "./actions";
 
@@ -133,7 +133,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         </form>
         <div className="admin-record-list">
           {categories.map((category) => {
-            const photo = category.category_images?.[0];
+            const photo = category.category_images;
             return <article className="admin-record" key={category.id}>
               <div className="admin-record-heading"><div><span className="admin-record-kicker">LEVEL {categoryDepth(category.id)}</span><h3>{categoryLabel(category)}</h3><p>/{category.slug}</p></div><span className={`status-pill ${category.status}`}>{category.status}</span></div>
               <div className="admin-category-layout">
@@ -147,8 +147,9 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
                   <div className="field"><label>Slug</label><input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" defaultValue={category.slug}/></div>
                   <div className="field"><label>Description</label><textarea name="description" maxLength={10000} defaultValue={category.description ?? ""}/></div>
                   <div className="field"><label>Status</label><select name="status" defaultValue={category.status}><option value="active">Published</option><option value="inactive">Hidden</option></select></div>
-                  <div className="record-actions"><button className="small-button">Save category</button><form action={deleteCategory}><input type="hidden" name="id" value={category.id}/><button className="small-button button-danger">Delete</button></form></div>
+                  <div className="record-actions"><button className="small-button">Save category</button></div>
                 </form>
+                <div className="record-footer"><form action={deleteCategory}><input type="hidden" name="id" value={category.id}/><button className="small-button button-danger">Delete category</button></form></div>
               </div>
             </article>;
           })}
