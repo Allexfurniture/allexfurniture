@@ -73,6 +73,23 @@ export function getCategoryPath(categoryId: string, categories: readonly Categor
  * Return the selected active category and all active descendants, safely
  * handling malformed parent-child data without unbounded recursion.
  */
+/**
+ * Identify categories whose complete slug path is unambiguous among the
+ * supplied categories. A duplicate path is never used to build public links.
+ */
+export function getUniqueCategoryIds(categories: readonly CategoryPathNode[]): Set<string> {
+  const candidates = categories
+    .map((category) => ({ id: category.id, path: getCategoryPath(category.id, categories).join("/") }))
+    .filter((category) => Boolean(category.path));
+  const counts = new Map<string, number>();
+
+  for (const category of candidates) {
+    counts.set(category.path, (counts.get(category.path) ?? 0) + 1);
+  }
+
+  return new Set(candidates.filter((category) => counts.get(category.path) === 1).map((category) => category.id));
+}
+
 export function getDescendantCategoryIds(categoryId: string, categories: readonly CategoryPathNode[]): string[] {
   const byId = new Map(categories.map((category) => [category.id, category]));
   const children = new Map<string, string[]>();
