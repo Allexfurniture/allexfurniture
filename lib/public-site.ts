@@ -55,7 +55,8 @@ export function getCategoryPath(categoryId: string, categories: readonly Categor
   let current = byId.get(categoryId);
 
   while (current) {
-    if (visited.has(current.id)) return [];
+    // The current database documents a maximum of three category levels.
+    if (visited.has(current.id) || segments.length >= 3) return [];
     if (current.status && current.status !== "active") return [];
     if (!current.slug.trim()) return [];
 
@@ -64,30 +65,34 @@ export function getCategoryPath(categoryId: string, categories: readonly Categor
 
     if (!current.parent_id) return segments;
     current = byId.get(current.parent_id);
+    if (!current) return [];
   }
 
   return [];
 }
 
 /**
- * Return the selected active category and all active descendants, safely
- * handling malformed parent-child data without unbounded recursion.
- */
-/**
- * Identify categories whose complete slug path is unambiguous among the
- * supplied categories. A duplicate path is never used to build public links.
+ * A category is routable only when its complete slug path and every ancestor
+ * prefix are unambiguous among the active categories.
  */
 export function getUniqueCategoryIds(categories: readonly CategoryPathNode[]): Set<string> {
-  const candidates = categories
-    .map((category) => ({ id: category.id, path: getCategoryPath(category.id, categories).join("/") }))
-    .filter((category) => Boolean(category.path));
-  const counts = new Map<string, number>();
+  const paths = new Map<string, string[]>();
+  const pathCounts = new Map<string, number>();
 
-  for (const category of candidates) {
-    counts.set(category.path, (counts.get(category.path) ?? 0) + 1);
+  for (const category of categories) {
+    const path = getCategoryPath(category.id, categories);
+    if (!path.length) continue;
+    paths.set(category.id, path);
+    const fullPath = path.join("/");
+    pathCounts.set(fullPath, (pathCounts.get(fullPath) ?? 0) + 1);
   }
 
-  return new Set(candidates.filter((category) => counts.get(category.path) === 1).map((category) => category.id));
+  const uniqueIds = new Set<string>();
+  for (const [categoryId, path] of paths) {
+    const hasUniquePrefixes = path.every((_, index) => pathCounts.get(path.slice(0, index + 1).join("/")) === 1);
+    if (hasUniquePrefixes) uniqueIds.add(categoryId);
+  }
+  return uniqueIds;
 }
 
 export function getDescendantCategoryIds(categoryId: string, categories: readonly CategoryPathNode[]): string[] {
