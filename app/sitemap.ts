@@ -4,15 +4,14 @@ import type { Database } from "@/lib/database.types";
 import { SITE_URL, getCategoryPath, getUniqueCategoryIds, isSafeModelSegment, productPath } from "@/lib/public-site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
   const entries: MetadataRoute.Sitemap = [
-    { url: new URL("/", SITE_URL).toString(), lastModified: now, changeFrequency: "weekly", priority: 1 },
-    { url: new URL("/about", SITE_URL).toString(), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: new URL("/group", SITE_URL).toString(), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: new URL("/furniture", SITE_URL).toString(), lastModified: now, changeFrequency: "daily", priority: 0.9 },
-    { url: new URL("/contact", SITE_URL).toString(), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: new URL("/privacy-policy", SITE_URL).toString(), lastModified: now, changeFrequency: "yearly", priority: 0.2 },
-    { url: new URL("/terms", SITE_URL).toString(), lastModified: now, changeFrequency: "yearly", priority: 0.2 },
+    { url: new URL("/", SITE_URL).toString(), changeFrequency: "weekly", priority: 1 },
+    { url: new URL("/about", SITE_URL).toString(), changeFrequency: "monthly", priority: 0.7 },
+    { url: new URL("/group", SITE_URL).toString(), changeFrequency: "monthly", priority: 0.6 },
+    { url: new URL("/furniture", SITE_URL).toString(), changeFrequency: "daily", priority: 0.9 },
+    { url: new URL("/contact", SITE_URL).toString(), changeFrequency: "monthly", priority: 0.6 },
+    { url: new URL("/privacy-policy", SITE_URL).toString(), changeFrequency: "yearly", priority: 0.2 },
+    { url: new URL("/terms", SITE_URL).toString(), changeFrequency: "yearly", priority: 0.2 },
   ];
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

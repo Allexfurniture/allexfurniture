@@ -137,7 +137,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
     supabase = loaded.supabase;
     categories = loaded.categories;
   } catch {
-    notFound();
+    throw new Error("Furniture catalog is temporarily unavailable.");
   }
 
   const lastSegment = segments[segments.length - 1] ?? "";
@@ -158,7 +158,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
         if (!relatedResult.error) related = (relatedResult.data ?? []).filter((item) => item.categories?.status === "active" && uniqueCategoryIds.has(item.categories.id));
       }
     } catch {
-      // Continue to legacy redirect, category lookup, and the branded 404 when needed.
+      throw new Error("Furniture catalog is temporarily unavailable.");
     }
   }
 
@@ -180,6 +180,21 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
       image: images.map((image) => storageUrl ? `${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}` : undefined).filter(Boolean),
       brand: { "@type": "Brand", name: "ALLEX Furniture" },
       url: new URL(canonical, SITE_URL).toString(),
+    };
+    const breadcrumbSchema = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", SITE_URL).toString() },
+        { "@type": "ListItem", position: 2, name: "Furniture", item: new URL("/furniture", SITE_URL).toString() },
+        ...breadcrumbCategories.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 3,
+          name: item.name,
+          item: new URL(`/furniture/${getCategoryPath(item.id, categories!).map(encodeURIComponent).join("/")}`, SITE_URL).toString(),
+        })),
+        { "@type": "ListItem", position: breadcrumbCategories.length + 3, name: product.name, item: new URL(canonical, SITE_URL).toString() },
+      ],
     };
 
         return <main>
@@ -206,6 +221,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
             </div>
             {related.length > 0 && <section className="related-products"><div className="section-heading"><div><p className="eyebrow">EXPLORE MORE</p><h2>Related <em>furniture.</em></h2></div><Link className="text-link" href="/furniture">View all furniture ↗</Link></div><div className="product-grid">{related.map((item) => <ProductCard key={item.id} product={item} categories={categories!} categoryPath={item.categories ? getCategoryPath(item.categories.id, categories!) : []} />)}</div></section>}
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, "\\u003c") }} />
           </section>
           <SiteFooter />
         </main>;
@@ -255,6 +271,20 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
     const prefix = categoryPath.slice(0, index + 1).join("/");
     return categories!.find((item) => getCategoryPath(item.id, categories!).join("/") === prefix);
   }).filter((item): item is Category => Boolean(item));
+  const categoryBreadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", SITE_URL).toString() },
+      { "@type": "ListItem", position: 2, name: "Furniture", item: new URL("/furniture", SITE_URL).toString() },
+      ...breadcrumbCategories.map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 3,
+        name: item.name,
+        item: new URL(`/furniture/${getCategoryPath(item.id, categories!).map(encodeURIComponent).join("/")}`, SITE_URL).toString(),
+      })),
+    ],
+  };
 
   return <main>
     <SiteHeader />
@@ -289,6 +319,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
         </nav>}
       </section>
     </section>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(categoryBreadcrumbSchema).replace(/</g, "\\u003c") }} />
     <SiteFooter />
   </main>;
 }
