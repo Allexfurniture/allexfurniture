@@ -27,7 +27,6 @@ export default function TermsPage() {
         <p>Links to other group concerns or third-party websites are provided for convenience. ALLEX Furniture does not control the content or policies of external sites.</p>
         <h2>Contact</h2>
         <p>For questions about these terms, email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> or visit the <Link href="/contact">contact page</Link>.</p>
-        <p className="legal-note">These website terms are a general operational draft, not legal advice. Review them for local legal compliance before production publication.</p>
       </div>
     </section>
     <SiteFooter />
