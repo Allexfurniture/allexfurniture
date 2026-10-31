@@ -28,19 +28,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .order("name");
     if (categoryError) throw categoryError;
     const categories = categoryRows ?? [];
-    const categoryUrls = new Set<string>();
-
-    for (const category of categories) {
+    const categoryCandidates = categories.flatMap((category) => {
       const path = getCategoryPath(category.id, categories);
-      if (!path.length) continue;
-      const url = new URL(`/furniture/${path.map(encodeURIComponent).join("/")}`, SITE_URL).toString();
-      if (categoryUrls.has(url)) continue;
-      categoryUrls.add(url);
+      if (!path.length) return [];
+      return [{
+        url: new URL(`/furniture/${path.map(encodeURIComponent).join("/")}`, SITE_URL).toString(),
+        path,
+        updatedAt: category.updated_at,
+      }];
+    });
+    const categoryUrlCounts = new Map<string, number>();
+    for (const category of categoryCandidates) categoryUrlCounts.set(category.url, (categoryUrlCounts.get(category.url) ?? 0) + 1);
+    for (const category of categoryCandidates) {
+      // Ambiguous duplicate category paths must not be advertised to search engines.
+      if (categoryUrlCounts.get(category.url) !== 1) continue;
       entries.push({
-        url,
-        lastModified: new Date(category.updated_at),
+        url: category.url,
+        lastModified: new Date(category.updatedAt),
         changeFrequency: "weekly",
-        priority: path.length === 1 ? 0.8 : 0.7,
+        priority: category.path.length === 1 ? 0.8 : 0.7,
       });
     }
 
