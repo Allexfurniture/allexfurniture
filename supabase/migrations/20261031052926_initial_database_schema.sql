@@ -82,7 +82,7 @@ begin
     )
     select coalesce(max(a.depth), 0), coalesce(bool_or(a.id = new.id), false)
       into ancestor_depth, creates_cycle
-    from ancestors;
+    from ancestors as a;
 
     if creates_cycle then
       raise exception 'Category hierarchy cannot contain a cycle'
