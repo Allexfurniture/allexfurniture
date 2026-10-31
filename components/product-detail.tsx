@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-auth";
 import { WorkflowLayout } from "@/components/workflow-layout";
 import { ProductGallery } from "@/components/product-gallery";
+import { deleteProduct, updateCatalogStatus } from "@/app/admin/dashboard/actions";
 export async function ProductDetail({id}:{id:string}) {
  const {supabase,user}=await requireAdmin();
  const {data}=await supabase.from("products").select("id,name,model,status,description,category_id,categories(name),product_images(id,storage_path,alt_text,is_primary)").eq("id",id).maybeSingle();
