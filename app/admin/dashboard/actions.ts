@@ -223,7 +223,7 @@ export async function setPrimaryProjectImage(formData: FormData) {
 }
 export async function deleteProjectImage(formData: FormData) {
   const supabase=await adminClient(); const id=value(formData,"image_id");
-  const {data:image,error:readError}=await supabase.from("project_images").select("id,storage_path").eq("id",id).maybeSingle();
+  const {data:image,error:readError}=await supabase.from("project_images").select("id,storage_path,project_id,is_primary").eq("id",id).maybeSingle();
   if(readError||!image) redirect("/admin/dashboard?error=Project%20image%20not%20found");
   const {error:storageError}=await supabase.storage.from("furniture-images").remove([image.storage_path]);
   if(storageError) redirect("/admin/dashboard?error=Could%20not%20delete%20project%20image%20file");
@@ -347,7 +347,7 @@ export async function uploadProductImage(formData: FormData) {
 export async function deleteProductImage(formData: FormData) {
   const supabase=await adminClient(); const imageId=value(formData,"image_id");
   if(!imageId) redirect("/admin/dashboard?error=Invalid%20image");
-  const {data:image,error:readError}=await supabase.from("product_images").select("id,storage_path,product_id").eq("id",imageId).maybeSingle();
+  const {data:image,error:readError}=await supabase.from("product_images").select("id,storage_path,product_id,is_primary").eq("id",imageId).maybeSingle();
   if(readError||!image) redirect("/admin/dashboard?error=Image%20not%20found");
   const {error:removeError}=await supabase.storage.from("furniture-images").remove([image.storage_path]);
   if(removeError) redirect("/admin/dashboard?error=Could%20not%20remove%20the%20image%20file");
