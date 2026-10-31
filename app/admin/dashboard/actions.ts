@@ -21,10 +21,50 @@ export async function createCategory(formData: FormData) {
   const supabase = await adminClient();
   const name = value(formData,"name"), slug = value(formData,"slug"), description = value(formData,"description");
   const parent = value(formData,"parent_id");
-  if (!name || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) redirect("/admin/dashboard?error=Enter%20a%20name%20and%20a%20valid%20slug");
+  if (!name || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    redirect("/admin/dashboard?error=Enter%20a%20name%20and%20a%20valid%20slug");
+  }
+
+  // Validate the selected parent before insert so users get a useful message.
+  // The database trigger remains the final authority for concurrent changes,
+  // cycle prevention, and the three-level hierarchy limit.
+  if (parent) {
+    const { data: rows, error: parentReadError } = await supabase.from("categories").select("id,parent_id");
+    if (parentReadError) {
+      redirect("/admin/dashboard?error=Could%20not%20verify%20the%20parent%20category.%20Refresh%20and%20try%20again");
+    }
+    const byId = new Map((rows ?? []).map((row) => [row.id, row]));
+    let current = byId.get(parent);
+    if (!current) {
+      redirect("/admin/dashboard?error=The%20selected%20parent%20category%20was%20not%20found.%20Refresh%20the%20page");
+    }
+    let depth = 1;
+    const visited = new Set<string>();
+    while (current.parent_id) {
+      if (visited.has(current.id)) {
+        redirect("/admin/dashboard?error=The%20existing%20category%20hierarchy%20contains%20a%20cycle.%20Contact%20support");
+      }
+      visited.add(current.id);
+      const ancestor = byId.get(current.parent_id);
+      if (!ancestor) break;
+      depth += 1;
+      current = ancestor;
+    }
+    if (depth >= 3) {
+      redirect("/admin/dashboard?error=Categories%20can%20have%20at%20most%20three%20levels.%20Choose%20a%20level%201%20or%202%20parent");
+    }
+  }
+
   const { error } = await supabase.from("categories").insert({ name, slug, description: description || null, parent_id: parent || null });
-  if (error) redirect("/admin/dashboard?error=Category%20could%20not%20be%20saved.%20Check%20the%20slug%20and%20parent%20category");
-  revalidatePath("/"); revalidatePath("/admin/dashboard"); redirect("/admin/dashboard?saved=Category%20created");
+  if (error) {
+    let message = "Category could not be saved. Please try again.";
+    if (error.code === "23505") message = "This slug already exists under the selected parent category.";
+    else if (error.code === "23514") message = "The category hierarchy is limited to three levels, and cannot contain a cycle.";
+    else if (error.code === "23503") message = "The selected parent category no longer exists. Refresh and try again.";
+    else if (error.code === "42501") message = "Your current session does not have permission to manage categories. Sign out and sign in again.";
+    redirect(`/admin/dashboard?error=${encodeURIComponent(message)}`);
+  }
+  revalidatePath("/"); revalidatePath("/furniture"); revalidatePath("/admin/dashboard"); redirect("/admin/dashboard?saved=Category%20created");
 }
 export async function createProduct(formData: FormData) {
   const supabase = await adminClient();
