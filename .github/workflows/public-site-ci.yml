@@ -57,9 +57,9 @@ jobs:
               exit 1
             fi
           done
-          status=$(curl --silent --output /dev/null --write-out "%{http_code}" http://127.0.0.1:3000/furniture/not-a-real-category)
+          status=$(curl --silent --output /dev/null --write-out "%{http_code}" http://127.0.0.1:3000/not-a-real-route)
           if [ "$status" != "404" ]; then
-            echo "Expected HTTP 404 for an unknown category, received $status"
+            echo "Expected HTTP 404 for an unknown route, received $status"
             cat /tmp/allexfurniture-next.log
             exit 1
           fi
