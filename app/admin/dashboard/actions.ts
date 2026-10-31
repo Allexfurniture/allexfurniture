@@ -87,8 +87,10 @@ export async function uploadProductImage(formData: FormData) {
     redirect("/admin/dashboard?error=Image%20uploaded%20but%20image%20metadata%20could%20not%20be%20saved");
   }
   if (makePrimary) {
-    const { error: clearError } = await supabase.from("product_images").update({ is_primary: false }).eq("product_id", productId);
-    const { error: primaryError } = clearError ? { error: clearError } : await supabase.from("product_images").update({ is_primary: true }).eq("id", imageRow.id);
+    const { error: primaryError } = await supabase.rpc("set_primary_product_image", {
+      target_product_id: productId,
+      target_image_id: imageRow.id,
+    });
     if (primaryError) {
       await supabase.storage.from("furniture-images").remove([storagePath]);
       await supabase.from("product_images").delete().eq("id", imageRow.id);
