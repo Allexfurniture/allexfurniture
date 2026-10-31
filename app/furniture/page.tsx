@@ -68,7 +68,7 @@ function categoryLabel(category: Category, categories: Category[]) {
   const names: string[] = [];
   const seen = new Set<string>();
   let current: Category | undefined = category;
-  while (current && !seen.has(current.id) && names.length < 3) {
+  while (current && !seen.has(current.id)) {
     seen.add(current.id);
     names.unshift(current.name);
     current = current.parent_id ? byId.get(current.parent_id) : undefined;
@@ -101,7 +101,8 @@ async function collectInBatches<T>(
 
 export default async function FurniturePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
-  const categorySlug = firstParam(params.category).slice(0, 100);
+  const categoryParam = firstParam(params.category).slice(0, 500);
+  let categoryKey = categoryParam;
   const search = safeSearch(firstParam(params.q));
   const requestedPage = Math.max(1, Math.min(100000, Number.parseInt(firstParam(params.page), 10) || 1));
   let categories: Category[] = [];
@@ -117,11 +118,18 @@ export default async function FurniturePage({ searchParams }: { searchParams: Pr
     categories = categoryData ?? [];
     const uniqueCategoryIds = getUniqueCategoryIds(categories);
     const validCategories = categories.filter((item) => uniqueCategoryIds.has(item.id));
-    const selectedCategory = categorySlug ? validCategories.find((item) => item.slug === categorySlug) : undefined;
+    const selectedCategory = categoryParam
+      ? validCategories.find((item) => getCategoryPath(item.id, validCategories).join("/") === categoryParam)
+        ?? (() => {
+          const legacyMatches = validCategories.filter((item) => item.slug === categoryParam);
+          return legacyMatches.length === 1 ? legacyMatches[0] : undefined;
+        })()
+      : undefined;
+    categoryKey = selectedCategory ? getCategoryPath(selectedCategory.id, validCategories).join("/") : categoryParam;
     const selectedIds = selectedCategory ? getDescendantCategoryIds(selectedCategory.id, validCategories) : undefined;
-    const invalidFilter = Boolean(categorySlug && !selectedCategory);
+    const invalidFilter = Boolean(categoryParam && !selectedCategory);
 
-    if (invalidFilter || (selectedIds && selectedIds.length === 0)) {
+    if (invalidFilter || (selectedCategory && selectedIds?.length === 0)) {
       products = [];
       total = 0;
     } else if (search) {
@@ -181,13 +189,13 @@ export default async function FurniturePage({ searchParams }: { searchParams: Pr
       </div>
       <form className="catalog-filter" action="/furniture" method="get">
         <label className="field"><span>Search products or categories</span><input name="q" type="search" maxLength={80} defaultValue={search} placeholder="e.g. executive chair or AF-9K" /></label>
-        <label className="field"><span>Category</span><select name="category" defaultValue={categorySlug}><option value="">All categories</option>{validCategories.map((item) => <option value={item.slug} key={item.id}>{categoryLabel(item, validCategories)}</option>)}</select></label>
+        <label className="field"><span>Category</span><select name="category" defaultValue={categoryKey}><option value="">All categories</option>{validCategories.map((item) => <option value={getCategoryPath(item.id, validCategories).join("/")} key={item.id}>{categoryLabel(item, validCategories)}</option>)}</select></label>
         <button className="button button-dark" type="submit">Search catalog <span>↗</span></button>
       </form>
-      <div className="catalog-result-summary" aria-live="polite">{connected ? `${total} ${total === 1 ? "product" : "products"}${search || categorySlug ? " found" : " in the catalog"}` : "The catalog is temporarily unavailable."}</div>
-      {products.length ? <div className="product-grid">{products.map((product) => <ProductCard key={product.id} product={product} categories={validCategories} categoryPath={product.categories ? getCategoryPath(product.categories.id, validCategories) : []} />)}</div> : <div className="empty-catalog"><span className="empty-icon" aria-hidden="true">✳</span><h2>{connected ? "No products found." : "The catalog is temporarily unavailable."}</h2><p>{connected ? "Try a different search term or category." : "Please check back shortly or contact our team."}</p>{(search || categorySlug) && <Link className="text-link" href="/furniture">Clear filters ↗</Link>}{connected && <Link className="text-link" href="/contact">Ask our team about furniture ↗</Link>}</div>}
+      <div className="catalog-result-summary" aria-live="polite">{connected ? `${total} ${total === 1 ? "product" : "products"}${search || categoryParam ? " found" : " in the catalog"}` : "The catalog is temporarily unavailable."}</div>
+      {products.length ? <div className="product-grid">{products.map((product) => <ProductCard key={product.id} product={product} categories={validCategories} categoryPath={product.categories ? getCategoryPath(product.categories.id, validCategories) : []} />)}</div> : <div className="empty-catalog"><span className="empty-icon" aria-hidden="true">✳</span><h2>{connected ? "No products found." : "The catalog is temporarily unavailable."}</h2><p>{connected ? "Try a different search term or category." : "Please check back shortly or contact our team."}</p>{(search || categoryParam) && <Link className="text-link" href="/furniture">Clear filters ↗</Link>}{connected && <Link className="text-link" href="/contact">Ask our team about furniture ↗</Link>}</div>}
       {connected && totalPages > 1 && <nav className="catalog-pagination" aria-label="Furniture pages">
-        {currentPage > 1 ? <Link className="text-link" href={pageHref(currentPage - 1, categorySlug, search)}>← Previous</Link> : <span />}
+        {currentPage > 1 ? <Link className="text-link" href={pageHref(currentPage - 1, categoryKey, search)}>← Previous</Link> : <span />}
         <span>Page {currentPage} of {totalPages}</span>
         {currentPage < totalPages ? <Link className="text-link" href={pageHref(currentPage + 1, categorySlug, search)}>Next →</Link> : <span />}
       </nav>}
