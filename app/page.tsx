@@ -76,6 +76,7 @@ export default async function Home() {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${SITE_URL}#organization`,
     name: COMPANY.name,
     url: SITE_URL,
     email: COMPANY.email,
@@ -85,6 +86,23 @@ export default async function Home() {
       addressLocality: "Dhaka",
       postalCode: "1213",
       addressCountry: "BD",
+    },
+  };
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${SITE_URL}#website`,
+    url: SITE_URL,
+    name: COMPANY.name,
+    inLanguage: "en",
+    publisher: { "@id": `${SITE_URL}#organization` },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/furniture?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
     },
   };
 
@@ -133,6 +151,7 @@ export default async function Home() {
 
     <section className="contact-banner"><div><p className="eyebrow">HAVE A REQUIREMENT?</p><h2>Let’s discuss your<br /><em>furniture enquiry.</em></h2></div><ButtonLink href="/contact">Contact our team <span>↗</span></ButtonLink></section>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema).replace(/</g, "\\u003c") }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema).replace(/</g, "\\u003c") }} />
     <SiteFooter />
   </main>;
 }
