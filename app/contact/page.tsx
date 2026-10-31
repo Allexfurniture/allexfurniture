@@ -24,7 +24,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
         <p>Ask about a catalog product or share a furniture requirement. Include the model number when enquiring about a specific item.</p>
       </div>
       <div className="contact-information-grid">
-        <article className="contact-information-card"><p className="eyebrow">HEAD OFFICE</p><h2>Visit or write to us</h2><address>{COMPANY.address}</address><a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></article>
+        <article className="contact-information-card"><p className="eyebrow">HEAD OFFICE</p><h2>Visit or write to us</h2><address>{COMPANY.address}</address><a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a><div className="contact-location-secondary"><p className="eyebrow">FURNITURE FACTORY</p><address>{COMPANY.factoryAddress}</address></div></article>
         <article className="contact-information-card"><p className="eyebrow">PRODUCT ENQUIRIES</p><h2>Share what you need</h2><p>Tell us the product name, model number, intended use, or the kind of furniture you are enquiring about.</p><Link className="text-link" href="/furniture">Browse published products ↗</Link></article>
       </div>
       <form action={submitContact} className="form-card">

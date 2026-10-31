@@ -4,6 +4,7 @@ export const COMPANY = {
   name: "ALLEX Furniture",
   tagline: "We provide comfort, rather product.",
   address: "NI Tower, Level 7, Plot 01, Road 10, Block E, Banani, Dhaka-1213, Bangladesh",
+  factoryAddress: "Abdul Hamid Road, Daroga Bari More, Satarkul, Uttar Badda, Dhaka, Bangladesh",
   email: "info@allexfurniturebd.com",
   website: "https://www.allexfurniturebd.com/",
   groupWebsite: "https://www.allexdesign.com/",

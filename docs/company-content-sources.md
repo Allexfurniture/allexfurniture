@@ -27,6 +27,7 @@ This register records the public sources reviewed while preparing the public web
 | Brand name | ALLEX Furniture | Official public website |
 | Tagline | “We provide comfort, rather product.” | Official public website |
 | Head office | NI Tower, Level 7, Plot 01, Road 10, Block E, Banani, Dhaka-1213, Bangladesh | Published on the official corporate websites |
+| Furniture factory | Abdul Hamid Road, Daroga Bari More, Satarkul, Uttar Badda, Dhaka, Bangladesh | Explicitly labelled “Furniture Factory” on the Allex Design page about ALLEX Furniture; shown separately from the head office |
 | Public email | info@allexfurniturebd.com | Published on the ALLEX Furniture website |
 | Business positioning | Office/commercial furniture and custom-made furniture enquiries | Supported by official public websites |
 | Public catalog | Existing Supabase product/category/image data | Database remains the source of truth for products |
@@ -46,7 +47,7 @@ The Allex Design website is linked for ALLEX Design & Development Ltd. No extern
 
 - The ALLEX Furniture site displays a phone number in a format that appears placeholder-like, while Allex Design publishes a different phone number. The public site therefore does not display a phone number until the company confirms which number should be used for ALLEX Furniture.
 - A second email address appears on the ALLEX Furniture website but is associated with another domain. It is not shown as the primary ALLEX Furniture email.
-- A factory address is published on an Allex Design page: Abdul Hamid Road, Daroga Bari More, Satarkul, Uttar Badda, Dhaka. It is not shown as the ALLEX Furniture public head-office address.
+- The factory address is shown separately from the head office and should be reconfirmed as current before production release.
 - No official public website was independently confirmed for AD Steel & Construction or The Allex Design during this review.
 
 ## Claims not copied into ALLEX Furniture pages without further confirmation
@@ -67,7 +68,7 @@ No schema migration, table/column modification, or product/category data change 
 ## Confirm before production publication
 
 - Confirm the preferred ALLEX Furniture phone number.
-- Confirm whether the factory address should be displayed on the furniture site.
+- Confirm that the published furniture-factory address remains current before production release.
 - Confirm official websites/social profiles for the two concerns without verified URLs.
 - Review Privacy Policy and Terms against the deployed services and applicable law.
 - Ensure `NEXT_PUBLIC_SITE_URL` is set to the intended production domain before release.
