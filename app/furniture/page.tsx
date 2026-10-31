@@ -197,7 +197,7 @@ export default async function FurniturePage({ searchParams }: { searchParams: Pr
       {connected && totalPages > 1 && <nav className="catalog-pagination" aria-label="Furniture pages">
         {currentPage > 1 ? <Link className="text-link" href={pageHref(currentPage - 1, categoryKey, search)}>← Previous</Link> : <span />}
         <span>Page {currentPage} of {totalPages}</span>
-        {currentPage < totalPages ? <Link className="text-link" href={pageHref(currentPage + 1, categorySlug, search)}>Next →</Link> : <span />}
+        {currentPage < totalPages ? <Link className="text-link" href={pageHref(currentPage + 1, categoryKey, search)}>Next →</Link> : <span />}
       </nav>}
     </section>
     <SiteFooter />
