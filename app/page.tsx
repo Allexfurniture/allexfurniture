@@ -62,6 +62,17 @@ export default async function Home() {
     return groups;
   }, []);
 
+  const heroProduct = products.find((product) =>
+    product.categories?.status === "active"
+    && validCategories.some((category) => category.id === product.categories?.id)
+    && Boolean(product.product_images?.length)
+  );
+  const heroImage = heroProduct?.product_images?.find((image) => image.is_primary) ?? heroProduct?.product_images?.[0];
+  const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
+  const heroImageUrl = heroImage && storageUrl
+    ? `${storageUrl}/storage/v1/object/public/furniture-images/${heroImage.storage_path}`
+    : null;
+
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -88,7 +99,9 @@ export default async function Home() {
         <div className="hero-note"><span className="note-dot" /> {COMPANY.tagline}</div>
       </div>
       <div className="hero-visual">
-        <div className="hero-photo" aria-hidden="true" />
+        <div className="hero-photo">
+          {heroImageUrl && heroProduct ? <Image className="hero-product-image" src={heroImageUrl} alt={heroImage?.alt_text?.trim() || `${heroProduct.name} furniture by ALLEX Furniture`} fill sizes="(max-width: 900px) 90vw, 45vw" priority /> : null}
+        </div>
         <div className="photo-label"><span>ALLEX FURNITURE</span><span>OFFICE & COMMERCIAL</span></div>
         <div className="hero-stamp"><span>THOUGHTFUL</span><b>FURNITURE<br />SOLUTIONS.</b><span>ALLEX FURNITURE</span></div>
       </div>
