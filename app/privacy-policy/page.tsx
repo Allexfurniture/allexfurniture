@@ -33,7 +33,6 @@ export default function PrivacyPolicyPage() {
         <p>This policy may be updated if the website&apos;s data collection or processing changes. Material changes should be reflected here before the updated functionality is published.</p>
         <h2>Questions or requests</h2>
         <p>For a privacy-related question, contact <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> or use the <Link href="/contact">contact page</Link>.</p>
-        <p className="legal-note">Review this policy against the deployed website configuration and applicable legal requirements before production publication, especially if analytics or other third-party services are enabled.</p>
       </div>
     </section>
     <SiteFooter />
