@@ -43,6 +43,11 @@ export type CategoryPathNode = {
   status?: string;
 };
 
+/**
+ * Resolve a category's complete active ancestor path.
+ * Missing parents, inactive ancestors, and cycles make the path invalid.
+ * There is intentionally no fixed depth limit: category depth is data-driven.
+ */
 export function getCategoryPath(categoryId: string, categories: readonly CategoryPathNode[]): string[] {
   const byId = new Map(categories.map((category) => [category.id, category]));
   const segments: string[] = [];
@@ -50,42 +55,30 @@ export function getCategoryPath(categoryId: string, categories: readonly Categor
   let current = byId.get(categoryId);
 
   while (current) {
-    if (visited.has(current.id) || segments.length >= 3) return [];
+    if (visited.has(current.id)) return [];
     if (current.status && current.status !== "active") return [];
+    if (!current.slug.trim()) return [];
+
     visited.add(current.id);
     segments.unshift(current.slug);
 
     if (!current.parent_id) return segments;
     current = byId.get(current.parent_id);
-    if (!current) return [];
   }
 
   return [];
 }
 
-export function getUniqueCategoryIds(categories: readonly CategoryPathNode[]): Set<string> {
-  const paths = new Map<string, string[]>();
-  const pathCounts = new Map<string, number>();
-
-  for (const category of categories) {
-    const path = getCategoryPath(category.id, categories);
-    if (!path.length) continue;
-    paths.set(category.id, path);
-    const fullPath = path.join("/");
-    pathCounts.set(fullPath, (pathCounts.get(fullPath) ?? 0) + 1);
-  }
-
-  const uniqueIds = new Set<string>();
-  for (const [categoryId, path] of paths) {
-    const hasUniquePrefixes = path.every((_, index) => pathCounts.get(path.slice(0, index + 1).join("/")) === 1);
-    if (hasUniquePrefixes) uniqueIds.add(categoryId);
-  }
-  return uniqueIds;
-}
-
+/**
+ * Return the selected active category and all active descendants, safely
+ * handling malformed parent-child data without unbounded recursion.
+ */
 export function getDescendantCategoryIds(categoryId: string, categories: readonly CategoryPathNode[]): string[] {
+  const byId = new Map(categories.map((category) => [category.id, category]));
   const children = new Map<string, string[]>();
+
   for (const category of categories) {
+    if (category.status && category.status !== "active") continue;
     if (!category.parent_id) continue;
     const siblings = children.get(category.parent_id) ?? [];
     siblings.push(category.id);
@@ -95,12 +88,17 @@ export function getDescendantCategoryIds(categoryId: string, categories: readonl
   const result: string[] = [];
   const visited = new Set<string>();
   const queue = [categoryId];
+  let cursor = 0;
 
-  while (queue.length > 0 && visited.size <= categories.length) {
-    const currentId = queue.shift();
+  while (cursor < queue.length) {
+    const currentId = queue[cursor++];
     if (!currentId || visited.has(currentId)) continue;
     visited.add(currentId);
-    if (categories.some((category) => category.id === currentId)) result.push(currentId);
+
+    const current = byId.get(currentId);
+    if (!current || (current.status && current.status !== "active")) continue;
+
+    result.push(currentId);
     queue.push(...(children.get(currentId) ?? []));
   }
 
@@ -108,7 +106,7 @@ export function getDescendantCategoryIds(categoryId: string, categories: readonl
 }
 
 export function productPath(categoryPath: readonly string[], model: string): string {
-  if (!categoryPath.length) return "/furniture";
+  if (!categoryPath.length || categoryPath.some((segment) => !segment.trim())) return "/furniture";
   return `/furniture/${[...categoryPath, model].map((segment) => encodeURIComponent(segment)).join("/")}`;
 }
 
