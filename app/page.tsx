@@ -52,7 +52,7 @@ export default async function Home() {
   const rootCategories = validCategories.filter((category) => !category.parent_id);
   const productGroups = products.reduce<{ id: string; slug: string; name: string; items: Product[] }[]>((groups, product) => {
     const category = product.categories;
-    if (!category) return groups;
+    if (!category || category.status !== "active" || !validCategories.some((item) => item.id === category.id)) return groups;
     let group = groups.find((item) => item.id === category.id);
     if (!group) {
       group = { id: category.id, slug: category.slug, name: category.name, items: [] };
