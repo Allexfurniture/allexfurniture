@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Allex Furniture
 
-## Getting Started
+A catalog-only furniture website built with Next.js App Router, TypeScript, and Supabase. The site has a public furniture showcase, product detail pages, a contact form, and an administrator workspace. There is no customer checkout or customer signup.
 
-First, run the development server:
+## Stack
+- Next.js App Router and React
+- Supabase Postgres, Auth, and Storage
+- `@supabase/ssr` for cookie-based server-side auth
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Local setup
+1. Install dependencies with `npm install`.
+2. Copy `.env.example` to `.env.local`.
+3. In Supabase Dashboard → Project Settings → API, copy the project URL and publishable key into `.env.local`.
+4. Run `npm run dev`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Administrator access
+1. Create an administrator account in Supabase Authentication.
+2. Set trusted `app_metadata.is_admin = true` for that user through a trusted server/Admin API workflow. Never set this flag in user-editable metadata or expose the service-role key to the browser.
+3. Sign in at `/admin/login`. The dashboard verifies the authenticated user's trusted app metadata and the database RLS policies enforce admin access.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
+- Responsive catalog landing page and product details by category slug and model number.
+- Category, product, project and enquiry overview in `/admin/dashboard`.
+- Admin forms to create categories, products and projects, and update catalog/enquiry statuses.
+- Public contact form with server-side validation; submissions are stored in the `contacts` table.
+- Supabase SSR client uses HttpOnly session cookies managed by `@supabase/ssr`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Storage
+The database stores object paths, not public URLs. Before adding image uploads, create a Storage bucket named `furniture-images` and define policies for public reads of published catalog images and admin-only uploads/changes. The current application displays product images from that bucket when image metadata is present. Category and project image upload controls are not yet implemented.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Checks
+Run `npm run lint` and `npm run build` before deployment. Configure the same Supabase public environment variables in your hosting provider. Do not commit `.env.local` or any service-role/secret key.
