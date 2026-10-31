@@ -45,12 +45,22 @@ export default async function ProjectDetailPage({ params }: Props) {
   try {
     project = await getProject(slug);
   } catch {
-    notFound();
+    throw new Error("Projects are temporarily unavailable.");
   }
   if (!project) notFound();
 
   const images = [...(project.project_images ?? [])].sort((a, b) => Number(b.is_primary) - Number(a.is_primary));
   const storageUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
+  const canonical = `/projects/${encodeURIComponent(project.slug)}`;
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: new URL("/", SITE_URL).toString() },
+      { "@type": "ListItem", position: 2, name: "Projects", item: new URL("/projects", SITE_URL).toString() },
+      { "@type": "ListItem", position: 3, name: project.name, item: new URL(canonical, SITE_URL).toString() },
+    ],
+  };
 
   return <main>
     <SiteHeader />
@@ -59,6 +69,7 @@ export default async function ProjectDetailPage({ params }: Props) {
       <div className="project-detail-heading"><p className="eyebrow">ALLEX IN THE WORLD</p><h1>{project.name}</h1>{project.description && <p>{project.description}</p>}</div>
       {images.length && storageUrl ? <div className="project-detail-gallery">{images.map((image) => <div className="project-detail-image" key={image.id}><Image src={`${storageUrl}/storage/v1/object/public/furniture-images/${image.storage_path}`} alt={image.alt_text?.trim() || project.name} fill sizes="(max-width: 700px) 90vw, 70vw" /></div>)}</div> : <div className="empty-catalog"><p>No project images have been published yet.</p></div>}
       <ButtonLink href="/contact">Ask us about a similar project <span>↗</span></ButtonLink>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, "\\u003c") }} />
     </section>
     <SiteFooter />
   </main>;
