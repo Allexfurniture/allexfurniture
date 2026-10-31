@@ -95,10 +95,17 @@ async function saveProductImages(supabase: Awaited<ReturnType<typeof createClien
         product_id: productId, storage_path: storagePath,
         alt_text: altText || null, is_primary: false,
       }).select("id").single();
-      if (error || !data) throw new Error("Image uploaded but its product record could not be saved.");
+      if (error || !data) {
+        await supabase.storage.from("furniture-images").remove([storagePath]);
+        throw new Error("Image uploaded but its product record could not be saved.");
+      }
       if (i === 0 && !existingPrimary) {
         const { error: primaryError } = await supabase.rpc("set_primary_product_image", { target_product_id: productId, target_image_id: data.id });
-        if (primaryError) throw new Error("Image saved, but could not set the first image as primary.");
+        if (primaryError) {
+          await supabase.from("product_images").delete().eq("id", data.id);
+          await supabase.storage.from("furniture-images").remove([storagePath]);
+          throw new Error("Image saved, but could not set the first image as primary.");
+        }
       }
   }
 }
@@ -215,6 +222,8 @@ export async function deleteProject(formData: FormData) {
 export async function setPrimaryProjectImage(formData: FormData) {
   const supabase=await adminClient(); const id=value(formData,"image_id"),projectId=value(formData,"project_id");
   if(!id||!projectId) redirect("/admin/dashboard?error=Invalid%20project%20image");
+  const {data:image}=await supabase.from("project_images").select("id").eq("id",id).eq("project_id",projectId).maybeSingle();
+  if(!image) redirect("/admin/dashboard?error=Project%20image%20not%20found");
   const {error:clearError}=await supabase.from("project_images").update({is_primary:false}).eq("project_id",projectId);
   if(clearError) redirect("/admin/dashboard?error=Could%20not%20update%20project%20image");
   const {error}=await supabase.from("project_images").update({is_primary:true}).eq("id",id).eq("project_id",projectId);
