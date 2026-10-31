@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/button-link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { SITE_URL } from "@/lib/public-site";
 
 type Props = { params: Promise<{ slug: string }> };
 
