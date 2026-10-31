@@ -87,24 +87,18 @@ async function storeImage(supabase: Awaited<ReturnType<typeof createClient>>, fi
   return storagePath;
 }
 async function saveProductImages(supabase: Awaited<ReturnType<typeof createClient>>, productId: string, files: File[], altText: string) {
-  const savedPaths: string[] = [];
-  try {
-    for (let i = 0; i < files.length; i++) {
+  const { data: existingPrimary } = await supabase.from("product_images").select("id").eq("product_id", productId).eq("is_primary", true).maybeSingle();
+  for (let i = 0; i < files.length; i++) {
       const storagePath = await storeImage(supabase, files[i], `products/${productId}`);
-      savedPaths.push(storagePath);
       const { data, error } = await supabase.from("product_images").insert({
         product_id: productId, storage_path: storagePath,
         alt_text: altText || null, is_primary: false,
       }).select("id").single();
       if (error || !data) throw new Error("Image uploaded but its product record could not be saved.");
-      if (i === 0) {
+      if (i === 0 && !existingPrimary) {
         const { error: primaryError } = await supabase.rpc("set_primary_product_image", { target_product_id: productId, target_image_id: data.id });
         if (primaryError) throw new Error("Image saved, but could not set the first image as primary.");
       }
-    }
-  } catch (error) {
-    // Keep the product, but clean up any image files that were not successfully linked.
-    throw error;
   }
 }
 export async function createProduct(formData: FormData) {
@@ -182,6 +176,23 @@ async function saveProjectImages(supabase: Awaited<ReturnType<typeof createClien
     }
   }
 }
+export async function uploadMoreProjectImages(formData: FormData) {
+  const supabase=await adminClient(); const projectId=value(formData,"project_id"),altText=value(formData,"alt_text").slice(0,1000),files=imageFiles(formData);
+  if(!projectId||!files.length||!validImages(files)) redirect("/admin/dashboard?error=Choose%20up%20to%208%20JPG%2C%20PNG%2C%20WebP%20or%20GIF%20images%20up%20to%208MB%20each");
+  const {data:project}=await supabase.from("projects").select("id").eq("id",projectId).maybeSingle();
+  if(!project) redirect("/admin/dashboard?error=Project%20not%20found");
+  const {data:existingPrimary}=await supabase.from("project_images").select("id").eq("project_id",projectId).eq("is_primary",true).maybeSingle();
+  for(let i=0;i<files.length;i++){
+    const path=await storeImage(supabase,files[i],`projects/${projectId}`);
+    const {data,error}=await supabase.from("project_images").insert({project_id:projectId,storage_path:path,alt_text:altText||null,is_primary:false}).select("id").single();
+    if(error||!data){await supabase.storage.from("furniture-images").remove([path]);redirect("/admin/dashboard?error=Project%20image%20metadata%20could%20not%20be%20saved");}
+    if(i===0&&!existingPrimary){
+      const {error:setError}=await supabase.from("project_images").update({is_primary:true}).eq("id",data.id);
+      if(setError) redirect("/admin/dashboard?error=Could%20not%20set%20the%20primary%20project%20image");
+    }
+  }
+  revalidatePath("/"); revalidatePath("/projects"); revalidatePath("/admin/dashboard"); redirect("/admin/dashboard?saved=Project%20gallery%20updated");
+}
 export async function updateProject(formData: FormData) {
   const supabase=await adminClient();
   const id=value(formData,"id"),name=value(formData,"name"),slug=value(formData,"slug"),description=value(formData,"description"),status=value(formData,"status");
@@ -217,6 +228,10 @@ export async function deleteProjectImage(formData: FormData) {
   if(storageError) redirect("/admin/dashboard?error=Could%20not%20delete%20project%20image%20file");
   const {error}=await supabase.from("project_images").delete().eq("id",id);
   if(error) redirect("/admin/dashboard?error=Could%20not%20delete%20project%20image%20record");
+  if(image.is_primary){
+    const {data:nextImage}=await supabase.from("project_images").select("id").eq("project_id",image.project_id).order("created_at",{ascending:true}).limit(1).maybeSingle();
+    if(nextImage){await supabase.from("project_images").update({is_primary:false}).eq("project_id",image.project_id);await supabase.from("project_images").update({is_primary:true}).eq("id",nextImage.id);}
+  }
   revalidatePath("/projects"); revalidatePath("/admin/dashboard"); redirect("/admin/dashboard?saved=Project%20image%20deleted");
 }
 export async function updateCategory(formData: FormData) {
@@ -332,5 +347,9 @@ export async function deleteProductImage(formData: FormData) {
   if(removeError) redirect("/admin/dashboard?error=Could%20not%20remove%20the%20image%20file");
   const {error:deleteError}=await supabase.from("product_images").delete().eq("id",imageId);
   if(deleteError) redirect("/admin/dashboard?error=Image%20file%20removed%20but%20metadata%20could%20not%20be%20deleted");
+  if(image.is_primary){
+    const {data:nextImage}=await supabase.from("product_images").select("id").eq("product_id",image.product_id).order("created_at",{ascending:true}).limit(1).maybeSingle();
+    if(nextImage) await supabase.rpc("set_primary_product_image",{target_product_id:image.product_id,target_image_id:nextImage.id});
+  }
   revalidatePath("/"); revalidatePath("/furniture"); revalidatePath("/admin/dashboard"); redirect("/admin/dashboard?saved=Product%20image%20deleted");
 }
