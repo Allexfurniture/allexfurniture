@@ -52,6 +52,7 @@ This checklist applies only to the public website. It does not authorize admin w
 - [ ] Redirects are checked if any old URL patterns are retired.
 
 ## Quality gates
+- [ ] `npm test`
 - [ ] `npm run lint`
 - [ ] `npm run typecheck`
 - [ ] `npm run build`
