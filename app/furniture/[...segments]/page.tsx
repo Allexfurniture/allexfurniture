@@ -84,7 +84,7 @@ async function loadPageData() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { segments } = await params;
-  if (!segments.length || segments.length > 4) return { title: "Furniture", robots: { index: false, follow: true } };
+  if (!segments.length) return { title: "Furniture", robots: { index: false, follow: true } };
 
   try {
     const { supabase, categories } = await loadPageData();
@@ -128,7 +128,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FurniturePathPage({ params, searchParams }: Props) {
   const { segments } = await params;
   const queryParams = await searchParams;
-  if (!segments.length || segments.length > 4) notFound();
+  if (!segments.length) notFound();
 
   let supabase: Awaited<ReturnType<typeof createClient>>;
   let categories: Category[];
