@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { MetadataRoute } from "next";
 import type { Database } from "@/lib/database.types";
-import { SITE_URL, getCategoryPath, isSafeModelSegment, productPath } from "@/lib/public-site";
+import { SITE_URL, getCategoryPath, getUniqueCategoryIds, isSafeModelSegment, productPath } from "@/lib/public-site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -28,7 +28,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .order("name");
     if (categoryError) throw categoryError;
     const categories = categoryRows ?? [];
+    const uniqueCategoryIds = getUniqueCategoryIds(categories);
     const categoryCandidates = categories.flatMap((category) => {
+      if (!uniqueCategoryIds.has(category.id)) return [];
       const path = getCategoryPath(category.id, categories);
       if (!path.length) return [];
       return [{
@@ -60,7 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const candidateUrls = (productRows ?? []).flatMap((product) => {
       if (!isSafeModelSegment(product.model) || !product.categories || product.categories.status !== "active") return [];
       const category = categories.find((item) => item.id === product.categories?.id);
-      if (!category) return [];
+      if (!category || !uniqueCategoryIds.has(category.id)) return [];
       const path = getCategoryPath(category.id, categories);
       if (!path.length) return [];
       return [{ url: new URL(productPath(path, product.model), SITE_URL).toString(), updatedAt: product.updated_at }];

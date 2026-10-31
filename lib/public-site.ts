@@ -63,6 +63,26 @@ export function getCategoryPath(categoryId: string, categories: readonly Categor
   return [];
 }
 
+export function getUniqueCategoryIds(categories: readonly CategoryPathNode[]): Set<string> {
+  const paths = new Map<string, string[]>();
+  const pathCounts = new Map<string, number>();
+
+  for (const category of categories) {
+    const path = getCategoryPath(category.id, categories);
+    if (!path.length) continue;
+    paths.set(category.id, path);
+    const fullPath = path.join("/");
+    pathCounts.set(fullPath, (pathCounts.get(fullPath) ?? 0) + 1);
+  }
+
+  const uniqueIds = new Set<string>();
+  for (const [categoryId, path] of paths) {
+    const hasUniquePrefixes = path.every((_, index) => pathCounts.get(path.slice(0, index + 1).join("/")) === 1);
+    if (hasUniquePrefixes) uniqueIds.add(categoryId);
+  }
+  return uniqueIds;
+}
+
 export function getDescendantCategoryIds(categoryId: string, categories: readonly CategoryPathNode[]): string[] {
   const children = new Map<string, string[]>();
   for (const category of categories) {

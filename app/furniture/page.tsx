@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { getCategoryPath, getDescendantCategoryIds } from "@/lib/public-site";
+import { getCategoryPath, getDescendantCategoryIds, getUniqueCategoryIds } from "@/lib/public-site";
 
 export const metadata: Metadata = {
   title: "Furniture catalog",
@@ -115,7 +115,8 @@ export default async function FurniturePage({ searchParams }: { searchParams: Pr
     const { data: categoryData, error: categoryError } = await categoryQuery(supabase);
     if (categoryError) throw categoryError;
     categories = categoryData ?? [];
-    const validCategories = categories.filter((item) => getCategoryPath(item.id, categories).length > 0);
+    const uniqueCategoryIds = getUniqueCategoryIds(categories);
+    const validCategories = categories.filter((item) => uniqueCategoryIds.has(item.id));
     const selectedCategory = categorySlug ? validCategories.find((item) => item.slug === categorySlug) : undefined;
     const selectedIds = selectedCategory ? getDescendantCategoryIds(selectedCategory.id, validCategories) : undefined;
     const invalidFilter = Boolean(categorySlug && !selectedCategory);
@@ -165,7 +166,8 @@ export default async function FurniturePage({ searchParams }: { searchParams: Pr
   }
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const validCategories = categories.filter((item) => getCategoryPath(item.id, categories).length > 0)
+  const uniqueCategoryIds = getUniqueCategoryIds(categories);
+  const validCategories = categories.filter((item) => uniqueCategoryIds.has(item.id))
     .sort((a, b) => getCategoryPath(a.id, categories).join("/").localeCompare(getCategoryPath(b.id, categories).join("/")));
 
   return <main>

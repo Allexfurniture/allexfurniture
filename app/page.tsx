@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/button-link";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { COMPANY, SITE_URL, getCategoryPath } from "@/lib/public-site";
+import { COMPANY, SITE_URL, getCategoryPath, getUniqueCategoryIds } from "@/lib/public-site";
 
 export const metadata: Metadata = {
   title: "Home",
@@ -47,7 +47,8 @@ export default async function Home() {
     // Keep the public landing page useful while environment variables are being configured.
   }
 
-  const validCategories = categories.filter((category) => getCategoryPath(category.id, categories).length > 0);
+  const uniqueCategoryIds = getUniqueCategoryIds(categories);
+  const validCategories = categories.filter((category) => uniqueCategoryIds.has(category.id));
   const rootCategories = validCategories.filter((category) => !category.parent_id);
   const productGroups = products.reduce<{ id: string; slug: string; name: string; items: Product[] }[]>((groups, product) => {
     const category = product.categories;

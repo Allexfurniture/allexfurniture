@@ -8,7 +8,7 @@ import { ButtonLink } from "@/components/button-link";
 import { ProductCard } from "@/components/product-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { SITE_URL, getCategoryPath, getDescendantCategoryIds, isSafeModelSegment, productPath } from "@/lib/public-site";
+import { SITE_URL, getCategoryPath, getDescendantCategoryIds, getUniqueCategoryIds, isSafeModelSegment, productPath } from "@/lib/public-site";
 
 type Props = {
   params: Promise<{ segments: string[] }>;
@@ -63,12 +63,14 @@ function safePage(value: string | string[] | undefined): number {
 
 function findCategory(segments: string[], categories: Category[]) {
   const requested = segments.join("/");
-  const matches = categories.filter((category) => getCategoryPath(category.id, categories).join("/") === requested);
+  const uniqueCategoryIds = getUniqueCategoryIds(categories);
+  const matches = categories.filter((category) => uniqueCategoryIds.has(category.id) && getCategoryPath(category.id, categories).join("/") === requested);
   return matches.length === 1 ? matches[0] : null;
 }
 
 function productMatchesPath(product: Product, categorySegments: string[], categories: Category[]): boolean {
   if (!product.categories || product.categories.status !== "active") return false;
+  if (!getUniqueCategoryIds(categories).has(product.categories.id)) return false;
   const path = getCategoryPath(product.categories.id, categories);
   return path.length > 0 && path.join("/") === categorySegments.join("/");
 }
@@ -152,7 +154,8 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
       if (matches.length === 1) {
         product = matches[0];
         const relatedResult = await relatedProductsQuery(supabase!, product.category_id, product.id);
-        if (!relatedResult.error) related = (relatedResult.data ?? []).filter((item) => item.categories?.status === "active");
+        const uniqueCategoryIds = getUniqueCategoryIds(categories!);
+        if (!relatedResult.error) related = (relatedResult.data ?? []).filter((item) => item.categories?.status === "active" && uniqueCategoryIds.has(item.categories.id));
       }
     } catch {
       // Continue to legacy redirect, category lookup, and the branded 404 when needed.
@@ -223,7 +226,8 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
   if (!category) notFound();
 
   const categoryPath = getCategoryPath(category.id, categories!);
-  const descendants = getDescendantCategoryIds(category.id, categories!);
+  const uniqueCategoryIds = getUniqueCategoryIds(categories!);
+  const descendants = getDescendantCategoryIds(category.id, categories!).filter((id) => uniqueCategoryIds.has(id));
   if (!categoryPath.length || !descendants.length) notFound();
   const requestedPage = safePage(queryParams.page);
   let currentPage = requestedPage;
@@ -244,7 +248,7 @@ export default async function FurniturePathPage({ params, searchParams }: Props)
     notFound();
   }
 
-  const children = categories!.filter((item) => item.parent_id === category.id);
+  const children = categories!.filter((item) => item.parent_id === category.id && uniqueCategoryIds.has(item.id));
   const imageBase = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
   const totalPages = Math.max(1, Math.ceil(total / 12));
   const breadcrumbCategories = categoryPath.map((_, index) => {
