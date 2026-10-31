@@ -93,7 +93,6 @@ export function getUniqueCategoryIds(categories: readonly CategoryPathNode[]): S
 export function getDescendantCategoryIds(categoryId: string, categories: readonly CategoryPathNode[]): string[] {
   const byId = new Map(categories.map((category) => [category.id, category]));
   const children = new Map<string, string[]>();
-
   for (const category of categories) {
     if (category.status && category.status !== "active") continue;
     if (!category.parent_id) continue;
@@ -106,19 +105,15 @@ export function getDescendantCategoryIds(categoryId: string, categories: readonl
   const visited = new Set<string>();
   const queue = [categoryId];
   let cursor = 0;
-
   while (cursor < queue.length) {
     const currentId = queue[cursor++];
     if (!currentId || visited.has(currentId)) continue;
     visited.add(currentId);
-
     const current = byId.get(currentId);
     if (!current || (current.status && current.status !== "active")) continue;
-
     result.push(currentId);
     queue.push(...(children.get(currentId) ?? []));
   }
-
   return result;
 }
 
