@@ -66,7 +66,7 @@ export async function createCategory(formData: FormData) {
   }
   revalidatePath("/"); revalidatePath("/furniture"); revalidatePath("/admin/dashboard"); redirect("/admin/dashboard?saved=Category%20created");
 }
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 const IMAGE_TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -74,10 +74,11 @@ const IMAGE_TYPES: Record<string, string> = {
   "image/gif": "gif",
 };
 function imageFiles(formData: FormData) {
-  return formData.getAll("images").filter((item): item is File => item instanceof File && item.size > 0);
+  const item = formData.get("image");
+  return item instanceof File && item.size > 0 ? [item] : [];
 }
 function validImages(files: File[]) {
-  return files.length <= 8 && files.every((file) => Boolean(IMAGE_TYPES[file.type]) && file.size <= MAX_IMAGE_BYTES);
+  return files.length <= 1 && files.every((file) => Boolean(IMAGE_TYPES[file.type]) && file.size <= MAX_IMAGE_BYTES);
 }
 async function storeImage(supabase: Awaited<ReturnType<typeof createClient>>, file: File, path: string) {
   if (!IMAGE_TYPES[file.type] || file.size < 1 || file.size > MAX_IMAGE_BYTES) throw new Error("Use JPG, PNG, WebP or GIF images up to 8 MB each.");
@@ -106,7 +107,7 @@ export async function createProduct(formData: FormData) {
   const name = value(formData,"name"), model = value(formData,"model"), category_id = value(formData,"category_id"), description = value(formData,"description");
   const files = imageFiles(formData);
   if (!name || !model || !category_id) redirect("/admin/dashboard?error=Product%20name%2C%20model%20and%20category%20are%20required");
-  if (!validImages(files)) redirect("/admin/dashboard?error=Upload%20up%20to%208%20JPG%2C%20PNG%2C%20WebP%20or%20GIF%20images%2C%20maximum%208MB%20each");
+  if (!validImages(files)) redirect("/admin/dashboard?error=Upload%20one%20JPG%2C%20PNG%2C%20WebP%20or%20GIF%20image%20up%20to%203MB");
   const { data: product, error } = await supabase.from("products").insert({ name, model, category_id, description: description || null }).select("id").single();
   if (error || !product) {
     const message = error?.code === "23505" ? "That model number already exists. Model numbers must be unique." : "Product could not be saved. Check the model number and category.";
@@ -178,7 +179,7 @@ async function saveProjectImages(supabase: Awaited<ReturnType<typeof createClien
 }
 export async function uploadMoreProjectImages(formData: FormData) {
   const supabase=await adminClient(); const projectId=value(formData,"project_id"),altText=value(formData,"alt_text").slice(0,1000),files=imageFiles(formData);
-  if(!projectId||!files.length||!validImages(files)) redirect("/admin/dashboard?error=Choose%20up%20to%208%20JPG%2C%20PNG%2C%20WebP%20or%20GIF%20images%20up%20to%208MB%20each");
+  if(!projectId||!files.length||!validImages(files)) redirect("/admin/dashboard?error=Choose%20one%20JPG%2C%20PNG%2C%20WebP%20or%20GIF%20image%20up%20to%203MB");
   const {data:project}=await supabase.from("projects").select("id").eq("id",projectId).maybeSingle();
   if(!project) redirect("/admin/dashboard?error=Project%20not%20found");
   const {data:existingPrimary}=await supabase.from("project_images").select("id").eq("project_id",projectId).eq("is_primary",true).maybeSingle();
@@ -236,19 +237,24 @@ export async function deleteProjectImage(formData: FormData) {
 }
 export async function updateCategory(formData: FormData) {
   const supabase=await adminClient();
-  const id=value(formData,"id"),name=value(formData,"name"),slug=value(formData,"slug"),description=value(formData,"description"),status=value(formData,"status");
-  if(!id||!name||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)||!["active","inactive"].includes(status)) redirect("/admin/dashboard?error=Check%20the%20category%20details");
-  const {error}=await supabase.from("categories").update({name,slug,description:description||null,status}).eq("id",id);
+  const id=value(formData,"id"),name=value(formData,"name"),slug=value(formData,"slug"),description=value(formData,"description"),status=value(formData,"status"),parent_id=value(formData,"parent_id");
+  if(!id||!name||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)||!["active","inactive"].includes(status)||parent_id===id) redirect("/admin/dashboard?error=Check%20the%20category%20details");
+  const {error}=await supabase.from("categories").update({name,slug,description:description||null,status,parent_id:parent_id||null}).eq("id",id);
   if(error) redirect(`/admin/dashboard?error=${encodeURIComponent(error.code==="23505"?"That slug already exists under this parent.":"Category could not be updated.")}`);
   revalidatePath("/"); revalidatePath("/furniture"); revalidatePath("/admin/dashboard"); redirect("/admin/dashboard?saved=Category%20updated");
 }
 export async function deleteCategory(formData: FormData) {
   const supabase=await adminClient(); const id=value(formData,"id");
   if(!id) redirect("/admin/dashboard?error=Invalid%20category");
-  const {data:image}=await supabase.from("category_images").select("storage_path").eq("category_id",id).maybeSingle();
-  if(image?.storage_path){const {error}=await supabase.storage.from("furniture-images").remove([image.storage_path]);if(error)redirect("/admin/dashboard?error=Could%20not%20delete%20category%20image");}
+  const [{data:products},{data:children},{data:image}]=await Promise.all([
+    supabase.from("products").select("id").eq("category_id",id).limit(1),
+    supabase.from("categories").select("id").eq("parent_id",id).limit(1),
+    supabase.from("category_images").select("storage_path").eq("category_id",id).maybeSingle(),
+  ]);
+  if(products?.length||children?.length) redirect("/admin/dashboard?error=Move%20or%20delete%20this%20category's%20products%20and%20child%20categories%20first");
   const {error}=await supabase.from("categories").delete().eq("id",id);
-  if(error) redirect("/admin/dashboard?error=Category%20has%20products%20or%20child%20categories%2C%20or%20could%20not%20be%20deleted");
+  if(error) redirect("/admin/dashboard?error=Category%20could%20not%20be%20deleted");
+  if(image?.storage_path) await supabase.storage.from("furniture-images").remove([image.storage_path]);
   revalidatePath("/"); revalidatePath("/furniture"); revalidatePath("/admin/dashboard"); redirect("/admin/dashboard?saved=Category%20deleted");
 }
 export async function uploadCategoryImage(formData: FormData) {
@@ -265,7 +271,7 @@ export async function uploadCategoryImage(formData: FormData) {
 }
 export async function uploadMoreProductImages(formData: FormData) {
   const supabase=await adminClient(); const productId=value(formData,"product_id"),altText=value(formData,"alt_text").slice(0,1000),files=imageFiles(formData);
-  if(!productId||!files.length||!validImages(files)) redirect("/admin/dashboard?error=Choose%20up%20to%208%20JPG%2C%20PNG%2C%20WebP%20or%20GIF%20images%20up%20to%208MB%20each");
+  if(!productId||!files.length||!validImages(files)) redirect("/admin/dashboard?error=Choose%20one%20JPG%2C%20PNG%2C%20WebP%20or%20GIF%20image%20up%20to%203MB");
   const {data:product}=await supabase.from("products").select("id").eq("id",productId).maybeSingle();
   if(!product) redirect("/admin/dashboard?error=Product%20not%20found");
   try{await saveProductImages(supabase,productId,files,altText);}catch(error){redirect(`/admin/dashboard?error=${encodeURIComponent(error instanceof Error?error.message:"Product image upload failed")}`);}
