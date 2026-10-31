@@ -11,7 +11,7 @@ import {
 
 export const metadata: Metadata = { title: "Admin dashboard", robots: { index: false, follow: false, noarchive: true } };
 const imageAccept = "image/jpeg,image/png,image/webp,image/gif";
-const imageHelp = "JPG, PNG, WebP or GIF · up to 8 MB per image";
+const imageHelp = "JPG, PNG, WebP or GIF · one image up to 3 MB per upload";
 
 export default async function AdminDashboard({ searchParams }: { searchParams: Promise<{ error?: string; saved?: string }> }) {
   const params = await searchParams;
@@ -86,7 +86,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
             <div className="field"><label htmlFor="product-description">Description</label><textarea id="product-description" name="description" maxLength={50000} placeholder="Materials, dimensions, finish and details"/></div>
           </div>
           <div className="form-grid">
-            <div className="field"><label htmlFor="new-product-images">Product photos (optional)</label><input id="new-product-images" name="images" type="file" accept={imageAccept} multiple/><small className="field-help">{imageHelp}. Select up to 8. The first photo becomes the primary image.</small></div>
+            <div className="field"><label htmlFor="new-product-images">Product photos (optional)</label><input id="new-product-images" name="image" type="file" accept={imageAccept}/><small className="field-help">{imageHelp}. Upload one photo with the product. The first photo becomes the primary image.</small></div>
             <div className="field"><label htmlFor="new-product-alt">Image alternative text</label><input id="new-product-alt" name="alt_text" maxLength={1000} placeholder="Short description shared by uploaded photos"/></div>
           </div>
           <button className="small-button admin-primary-button" type="submit">＋ Create product and upload photos</button>
@@ -111,10 +111,10 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
               </div>)}</div>}
               <form action={uploadMoreProductImages} className="admin-upload-inline">
                 <input type="hidden" name="product_id" value={product.id}/>
-                <label>Upload more photos<input type="file" name="images" accept={imageAccept} multiple required/></label>
+                <label>Upload more photos<input type="file" name="image" accept={imageAccept} required/></label>
                 <label>Alt text<input name="alt_text" maxLength={1000} placeholder="Describe the photos"/></label>
                 <button className="small-button">Upload photos</button>
-                <small>{imageHelp}; up to 8 photos per upload.</small>
+                <small>{imageHelp}; one photo per upload.</small>
               </form>
               <div className="record-footer"><form action={deleteProduct}><input type="hidden" name="id" value={product.id}/><button className="small-button button-danger">Delete product and all photos</button></form></div>
             </article>;
@@ -146,6 +146,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
                   <div className="field"><label>Name</label><input name="name" required maxLength={150} defaultValue={category.name}/></div>
                   <div className="field"><label>Slug</label><input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" defaultValue={category.slug}/></div>
                   <div className="field"><label>Description</label><textarea name="description" maxLength={10000} defaultValue={category.description ?? ""}/></div>
+                  <div className="field"><label>Parent category</label><select name="parent_id" defaultValue={category.parent_id ?? ""}><option value="">Top-level category</option>{selectableParents.filter((item) => item.id !== category.id).map((item) => <option key={item.id} value={item.id}>{categoryLabel(item)} · Level {categoryDepth(item.id)}</option>)}</select><small className="field-help">Database validation will prevent cycles or hierarchy depth over three levels.</small></div>
                   <div className="field"><label>Status</label><select name="status" defaultValue={category.status}><option value="active">Published</option><option value="inactive">Hidden</option></select></div>
                   <div className="record-actions"><button className="small-button">Save category</button></div>
                 </form>
@@ -163,7 +164,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
           <div className="admin-form-title">Add a project</div>
           <div className="form-grid"><div className="field"><label htmlFor="project-name">Project name *</label><input id="project-name" name="name" required maxLength={200} placeholder="Riverside Residence"/></div><div className="field"><label htmlFor="project-slug">Slug *</label><input id="project-slug" name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="riverside-residence"/></div></div>
           <div className="field"><label htmlFor="project-description">Description</label><textarea id="project-description" name="description" maxLength={50000}/></div>
-          <div className="form-grid"><div className="field"><label htmlFor="new-project-images">Project gallery</label><input id="new-project-images" name="images" type="file" accept={imageAccept} multiple/><small className="field-help">{imageHelp}; up to 8 images. The first becomes the cover.</small></div><div className="field"><label htmlFor="new-project-alt">Image alt text</label><input id="new-project-alt" name="alt_text" maxLength={1000} placeholder="Describe the gallery images"/></div></div>
+          <div className="form-grid"><div className="field"><label htmlFor="new-project-images">Project gallery</label><input id="new-project-images" name="images" type="file" accept={imageAccept} multiple/><small className="field-help">{imageHelp}; one image with the project. The first image becomes the cover.</small></div><div className="field"><label htmlFor="new-project-alt">Image alt text</label><input id="new-project-alt" name="alt_text" maxLength={1000} placeholder="Describe the gallery images"/></div></div>
           <button className="small-button" type="submit">＋ Create project and gallery</button>
         </form>
         <div className="admin-record-list">
@@ -182,7 +183,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
                 <div className="admin-image-meta"><strong>{photo.is_primary ? "Cover image" : "Gallery image"}</strong><small>{photo.alt_text || photo.storage_path.split("/").pop()}</small></div>
                 <div className="record-actions">{!photo.is_primary && <form action={setPrimaryProjectImage}><input type="hidden" name="project_id" value={project.id}/><input type="hidden" name="image_id" value={photo.id}/><button className="small-button button-muted">Make cover</button></form>}<form action={deleteProjectImage}><input type="hidden" name="image_id" value={photo.id}/><button className="small-button button-danger">Delete photo</button></form></div>
               </div>)}</div>}
-              <form action={uploadMoreProjectImages} className="admin-upload-inline"><input type="hidden" name="project_id" value={project.id}/><label>Upload more gallery photos<input type="file" name="images" accept={imageAccept} multiple required/></label><label>Alt text<input name="alt_text" maxLength={1000} placeholder="Describe the images"/></label><button className="small-button">Upload gallery</button><small>{imageHelp}; up to 8 images.</small></form>
+              <form action={uploadMoreProjectImages} className="admin-upload-inline"><input type="hidden" name="project_id" value={project.id}/><label>Upload more gallery photos<input type="file" name="images" accept={imageAccept} multiple required/></label><label>Alt text<input name="alt_text" maxLength={1000} placeholder="Describe the images"/></label><button className="small-button">Upload gallery</button><small>{imageHelp}; one image per upload.</small></form>
               <div className="record-footer"><form action={deleteProject}><input type="hidden" name="id" value={project.id}/><button className="small-button button-danger">Delete project and gallery</button></form></div>
             </article>;
           })}
