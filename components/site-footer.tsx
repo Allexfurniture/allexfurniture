@@ -37,7 +37,7 @@ export function SiteFooter() {
     </div>
     <div className="footer-bottom">
       <span>© {new Date().getFullYear()} ALLEX Furniture. All rights reserved.</span>
-      <div className="developer-credit"><span>Designed &amp; Developed by <strong>Faruk Islam</strong></span><a href="https://www.facebook.com/farukislamyt" target="_blank" rel="noopener noreferrer" aria-label="Faruk Islam on Facebook">Facebook: farukislamyt ↗</a></div>
+      <div className="developer-credit"><span>Designed &amp; Developed by <strong>Faruk Islam</strong></span></div>
     </div>
   </footer>;
 }
