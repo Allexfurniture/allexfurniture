@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { COMPANY, GROUP_CONCERNS } from "@/lib/public-site";
 
@@ -5,9 +6,14 @@ export function SiteFooter() {
   return <footer className="site-footer">
     <div className="footer-main">
       <div className="footer-brand-block">
-        <Link href="/" className="brand" aria-label="ALLEX Furniture home">
-          <span className="brand-mark" aria-hidden="true">A.</span>
-          <span>ALLEX<span className="brand-light">FURNITURE</span></span>
+        <Link href="/" className="footer-logo-link" aria-label="ALLEX Furniture home">
+          <Image
+            src="/Allex-Furniture-Logo.png"
+            alt="ALLEX Furniture"
+            width={200}
+            height={80}
+            className="footer-logo"
+          />
         </Link>
         <p>{COMPANY.tagline}</p>
         <p className="footer-address">{COMPANY.address}</p>
