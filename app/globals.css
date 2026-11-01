@@ -166,7 +166,7 @@ h1,h2,h3,p{margin-top:0}h1,h2{font-family:Georgia,'Times New Roman',serif;font-w
 .not-found-actions{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-top:18px}
 .site-footer{display:block;padding:54px 6.5% 24px;background:var(--ink);color:var(--paper)}
 .footer-main{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:34px;padding-bottom:38px}
-.footer-logo-link{display:inline-flex;align-items:center;width:fit-content;max-width:100%}.footer-logo{display:block;width:180px;height:auto;max-width:100%;object-fit:contain}.footer-brand-block .brand{color:var(--paper);width:fit-content}
+.footer-logo-link{display:inline-flex;align-items:center;width:fit-content;max-width:100%}.footer-logo{display:block;width:180px;height:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.28))}.footer-brand-block .brand{color:var(--paper);width:fit-content}
 .footer-brand-block .brand-mark{color:var(--paper);border-color:#a8aa91}
 .footer-brand-block>p{max-width:300px;margin:18px 0 8px;color:#d1cec4;font-size:12px;line-height:1.8}
 .footer-brand-block .footer-address{font-size:11px}
