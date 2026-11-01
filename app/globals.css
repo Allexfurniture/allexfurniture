@@ -196,3 +196,10 @@ h1,h2,h3,p{margin-top:0}h1,h2{font-family:Georgia,'Times New Roman',serif;font-w
 .hero-product-image{object-fit:contain;padding:clamp(18px,4vw,48px)}
 
 .contact-location-secondary{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}.contact-location-secondary .eyebrow{margin-bottom:8px}
+
+/* Footer credit */
+.developer-credit{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px 18px;text-align:right;line-height:1.7}
+.developer-credit strong{color:var(--paper);font-weight:600}
+.developer-credit a{color:#d1cec4;text-decoration:underline;text-decoration-color:#77796c;text-underline-offset:3px}
+.developer-credit a:hover{color:#fff;text-decoration-color:#fff}
+@media(max-width:650px){.developer-credit{justify-content:flex-start;text-align:left;gap:4px 14px}.footer-bottom{align-items:flex-start}}
