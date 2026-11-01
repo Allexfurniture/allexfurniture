@@ -114,6 +114,10 @@ export default async function Home() {
         <h1>Furniture for<br />spaces that <em>work.</em></h1>
         <p className="hero-description">ALLEX Furniture provides office and commercial furniture solutions, including imported furniture and custom-made options for spaces with specific needs.</p>
         <div className="hero-actions"><Link className="button button-dark" href="/furniture">Explore furniture <span>↗</span></Link><Link className="text-link" href="/contact">Discuss an enquiry <span>↗</span></Link></div>
+        <form className="hero-search" action="/furniture" method="get" role="search">
+          <label htmlFor="home-catalog-search">Looking for something specific?</label>
+          <div className="hero-search-control"><input id="home-catalog-search" type="search" name="q" placeholder="Search furniture or model number" /><button type="submit" aria-label="Search furniture">↗</button></div>
+        </form>
         <div className="hero-note"><span className="note-dot" /> {COMPANY.tagline}</div>
       </div>
       <div className="hero-visual">
@@ -126,6 +130,15 @@ export default async function Home() {
     </section>
 
     <section className="trust-strip"><span>OFFICE FURNITURE</span><i /> <span>CUSTOM-MADE SOLUTIONS</span><i /> <span>ACTIVE PRODUCT CATALOG</span><i /> <span>DIRECT ENQUIRIES</span></section>
+
+    <section className="home-help-section" aria-labelledby="home-help-heading">
+      <div className="home-help-intro"><p className="eyebrow">A SIMPLE WAY FORWARD</p><h2 id="home-help-heading">Start with what<br /><em>you need.</em></h2><p>Explore available products, browse by category, or tell us about a space that needs a tailored furniture solution.</p></div>
+      <div className="home-help-options">
+        <Link className="home-help-card" href="/furniture"><span className="home-help-number">01 / CATALOG</span><span className="home-help-title">Browse furniture</span><span className="home-help-description">Explore published products and category options.</span><span className="home-help-arrow" aria-hidden="true">↗</span></Link>
+        <Link className="home-help-card" href="/about"><span className="home-help-number">02 / COMPANY</span><span className="home-help-title">Get to know ALLEX</span><span className="home-help-description">Learn about our furniture focus and approach.</span><span className="home-help-arrow" aria-hidden="true">↗</span></Link>
+        <Link className="home-help-card" href="/contact"><span className="home-help-number">03 / ENQUIRY</span><span className="home-help-title">Discuss your project</span><span className="home-help-description">Share your requirements with our team.</span><span className="home-help-arrow" aria-hidden="true">↗</span></Link>
+      </div>
+    </section>
 
     <section id="collections" className="section collections-section">
       <div className="section-heading"><div><p className="eyebrow">EXPLORE THE CATALOG</p><h2>Browse by <em>category.</em></h2><p className="section-intro">Choose a category to explore its subcategories and published products.</p></div><Link className="text-link" href="/furniture">View all furniture <span>↗</span></Link></div>
