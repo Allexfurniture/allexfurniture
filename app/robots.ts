@@ -1,15 +1,14 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/public-site";
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://allexfurniture.vercel.app";
-
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/contact", "/furniture/"],
-      disallow: ["/admin/"],
+      allow: ["/"],
+      disallow: ["/admin", "/api"],
     },
-    sitemap: new URL("/sitemap.xml", siteUrl).toString(),
-    host: siteUrl,
+    sitemap: new URL("/sitemap.xml", SITE_URL).toString(),
+    host: SITE_URL,
   };
 }

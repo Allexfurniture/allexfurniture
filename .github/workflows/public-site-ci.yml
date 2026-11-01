@@ -1,0 +1,65 @@
+name: Public website checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/catalog-performance-seo]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Unit tests
+        run: npm test
+      - name: Lint
+        run: npm run lint
+      - name: Type-check
+        run: npm run typecheck
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_SITE_URL: https://www.allexfurniturebd.com
+
+      - name: Smoke test public routes
+        run: |
+          set -eu
+          ./node_modules/.bin/next start --hostname 127.0.0.1 > /tmp/allexfurniture-next.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail http://127.0.0.1:3000/ >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/allexfurniture-next.log
+            exit 1
+          fi
+          for route in / /about /group /furniture /contact /privacy-policy /terms /projects /robots.txt /sitemap.xml; do
+            status=$(curl --silent --output /dev/null --write-out "%{http_code}" "http://127.0.0.1:3000$route")
+            if [ "$status" != "200" ]; then
+              echo "Expected HTTP 200 for $route, received $status"
+              cat /tmp/allexfurniture-next.log
+              exit 1
+            fi
+          done
+          status=$(curl --silent --output /dev/null --write-out "%{http_code}" http://127.0.0.1:3000/not-a-real-route)
+          if [ "$status" != "404" ]; then
+            echo "Expected HTTP 404 for an unknown route, received $status"
+            cat /tmp/allexfurniture-next.log
+            exit 1
+          fi

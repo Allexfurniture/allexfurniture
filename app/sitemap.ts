@@ -1,29 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 import type { MetadataRoute } from "next";
 import type { Database } from "@/lib/database.types";
+import { SITE_URL, getCategoryPath, getUniqueCategoryIds, isSafeModelSegment, productPath } from "@/lib/public-site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://allexfurniture.vercel.app";
-  const lastModified = new Date();
   const entries: MetadataRoute.Sitemap = [
-    {
-      url: new URL("/", siteUrl).toString(),
-      lastModified,
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: new URL("/contact", siteUrl).toString(),
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: new URL("/projects", siteUrl).toString(),
-      lastModified,
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
+    { url: new URL("/", SITE_URL).toString(), changeFrequency: "weekly", priority: 1 },
+    { url: new URL("/about", SITE_URL).toString(), changeFrequency: "monthly", priority: 0.7 },
+    { url: new URL("/group", SITE_URL).toString(), changeFrequency: "monthly", priority: 0.6 },
+    { url: new URL("/furniture", SITE_URL).toString(), changeFrequency: "daily", priority: 0.9 },
+    { url: new URL("/contact", SITE_URL).toString(), changeFrequency: "monthly", priority: 0.6 },
+    { url: new URL("/privacy-policy", SITE_URL).toString(), changeFrequency: "yearly", priority: 0.2 },
+    { url: new URL("/terms", SITE_URL).toString(), changeFrequency: "yearly", priority: 0.2 },
   ];
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -32,55 +20,78 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const supabase = createClient<Database>(supabaseUrl, publishableKey);
-    const pageSize = 500;
-    for (let offset = 0; offset < 50_000; offset += pageSize) {
-      const { data, error } = await supabase
-        .from("products")
-        .select("model,created_at,categories(slug,status)")
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + pageSize - 1);
-      if (error || !data?.length) break;
-
-      for (const product of data) {
-        if (entries.length >= 50_000) break;
-        if (!product.categories || product.categories.status !== "active") continue;
-        entries.push({
-          url: new URL(
-            `/furniture/${encodeURIComponent(product.categories.slug)}/${encodeURIComponent(product.model)}`,
-            siteUrl,
-          ).toString(),
-          lastModified: new Date(product.created_at),
-          changeFrequency: "weekly",
-          priority: 0.7,
-        });
-      }
-      if (data.length < pageSize || entries.length >= 50_000) break;
+    const { data: categoryRows, error: categoryError } = await supabase
+      .from("categories")
+      .select("id,name,slug,parent_id,status,updated_at")
+      .eq("status", "active")
+      .order("name");
+    if (categoryError) throw categoryError;
+    const categories = categoryRows ?? [];
+    const uniqueCategoryIds = getUniqueCategoryIds(categories);
+    const categoryCandidates = categories.flatMap((category) => {
+      if (!uniqueCategoryIds.has(category.id)) return [];
+      const path = getCategoryPath(category.id, categories);
+      if (!path.length) return [];
+      return [{
+        url: new URL(`/furniture/${path.map(encodeURIComponent).join("/")}`, SITE_URL).toString(),
+        path,
+        updatedAt: category.updated_at,
+      }];
+    });
+    const categoryUrlCounts = new Map<string, number>();
+    for (const category of categoryCandidates) categoryUrlCounts.set(category.url, (categoryUrlCounts.get(category.url) ?? 0) + 1);
+    for (const category of categoryCandidates) {
+      // Ambiguous duplicate category paths must not be advertised to search engines.
+      if (categoryUrlCounts.get(category.url) !== 1) continue;
+      entries.push({
+        url: category.url,
+        lastModified: new Date(category.updatedAt),
+        changeFrequency: "weekly",
+        priority: category.path.length === 1 ? 0.8 : 0.7,
+      });
     }
 
-    let remaining = Math.max(0, 50_000 - entries.length);
-    for (let offset = 0; remaining > 0 && offset < 50_000; offset += pageSize) {
-      const { data } = await supabase
-        .from("projects")
-        .select("slug,created_at")
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .range(offset, offset + Math.min(pageSize, remaining) - 1);
-      if (!data?.length) break;
-      for (const project of data) {
-        entries.push({
-          url: new URL(`/projects/${encodeURIComponent(project.slug)}`, siteUrl).toString(),
-          lastModified: new Date(project.created_at),
-          changeFrequency: "monthly",
-          priority: 0.6,
-        });
+    const { data: productRows, error: productError } = await supabase
+      .from("products")
+      .select("id,model,updated_at,categories(id,status)")
+      .eq("status", "active")
+      .order("updated_at", { ascending: false });
+    if (productError) throw productError;
+
+    const candidateUrls = (productRows ?? []).flatMap((product) => {
+      if (!isSafeModelSegment(product.model) || !product.categories || product.categories.status !== "active") return [];
+      const category = categories.find((item) => item.id === product.categories?.id);
+      if (!category || !uniqueCategoryIds.has(category.id)) return [];
+      const path = getCategoryPath(category.id, categories);
+      if (!path.length) return [];
+      return [{ url: new URL(productPath(path, product.model), SITE_URL).toString(), updatedAt: product.updated_at }];
+    });
+    const urlCounts = new Map<string, number>();
+    for (const item of candidateUrls) urlCounts.set(item.url, (urlCounts.get(item.url) ?? 0) + 1);
+    for (const item of candidateUrls) {
+      if (urlCounts.get(item.url) !== 1) continue;
+      entries.push({ url: item.url, lastModified: new Date(item.updatedAt), changeFrequency: "weekly", priority: 0.7 });
+    }
+
+    const { data: projects, error: projectsError } = await supabase
+      .from("projects")
+      .select("slug,updated_at")
+      .eq("status", "active")
+      .order("updated_at", { ascending: false });
+    if (!projectsError && projects?.length) {
+      entries.push({ url: new URL("/projects", SITE_URL).toString(), lastModified: new Date(projects[0].updated_at), changeFrequency: "monthly", priority: 0.6 });
+      for (const project of projects) {
+        entries.push({ url: new URL(`/projects/${encodeURIComponent(project.slug)}`, SITE_URL).toString(), lastModified: new Date(project.updated_at), changeFrequency: "monthly", priority: 0.5 });
       }
-      remaining = 50_000 - entries.length;
-      if (data.length < pageSize) break;
     }
   } catch {
-    // Keep the core sitemap available when the catalog API is temporarily unavailable.
+    // Keep the static corporate sitemap available when the public catalog is temporarily unavailable.
   }
 
-  return entries;
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.url)) return false;
+    seen.add(entry.url);
+    return true;
+  }).slice(0, 50_000);
 }
